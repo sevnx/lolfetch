@@ -1,10 +1,12 @@
 //! Module that handles the interaction with the Riot API.
 
 use anyhow::Result;
-use riven::RiotApi;
+use riven::{RiotApi, RiotApiConfig};
 use std::env;
 
-mod account;
+pub mod account;
+pub mod mastery;
+pub mod ranked;
 
 pub trait ApiInstanceGetter {
     /// Returns a new instance of the Riot API.
@@ -14,6 +16,7 @@ pub trait ApiInstanceGetter {
 impl ApiInstanceGetter for RiotApi {
     fn get_api_instance() -> Result<RiotApi> {
         let api_key = env::var("RIOT_API_KEY")?;
-        Ok(RiotApi::new(api_key))
+        println!("API Key: {}", api_key);
+        Ok(RiotApi::new(RiotApiConfig::with_key(api_key)))
     }
 }
