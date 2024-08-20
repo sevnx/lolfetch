@@ -4,7 +4,7 @@ use riven::consts::RegionalRoute;
 use thiserror::Error as ThisError;
 
 /// RiotId, used to identify a user in the Riot API.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RiotId {
     pub username: String,
     pub tagline: String,
@@ -55,12 +55,10 @@ impl PuuidGetter for riven::RiotApi {
             .get_by_riot_id(RegionalRoute::EUROPE, &riot_id.username, &riot_id.tagline)
             .await
         {
-            Ok(account) => {
-                return account
-                    .map(|account| account.puuid)
-                    .ok_or(AccountFetchError::AccountNotFound)
-            }
-            Err(e) => return Err(AccountFetchError::ApiError(e)),
+            Ok(account) => account
+                .map(|account| account.puuid)
+                .ok_or(AccountFetchError::AccountNotFound),
+            Err(e) => Err(AccountFetchError::ApiError(e)),
         }
     }
 }

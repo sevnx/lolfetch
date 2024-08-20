@@ -7,10 +7,12 @@ edition = "2021"
 riven = "2.56.0"
 reqwest = "0.12.5"
 tokio = { version = "1.39.2", features = ["full"] }
-clap = "4.5.13"
+clap = { version = "4.5.15", features = ["derive"] }
 dotenv = "0.15.0"
 anyhow = "1.0.86"
 thiserror = "1.0.63"
 tokio-macros = "2.2.0"
 lolfetch-ascii = { path = "./lolfetch_ascii" }
 url = "2.5.2"
+termcolor = "1.4.1"
+enum_dispatch = "0.3.13"

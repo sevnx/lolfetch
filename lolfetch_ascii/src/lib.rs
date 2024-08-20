@@ -1,87 +1,62 @@
-use std::fmt;
-use std::io::Write;
-use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
+use color::{ColoredChar, ColoredString};
+use image::{GenericImageView, ImageError};
+use rayon::prelude::*;
+use reqwest::Client;
+use std::path::Path;
+use termcolor::Color;
+use thiserror::Error;
 
-pub mod ascii_art {
-    use image::GenericImageView;
-    use image::ImageError;
-    use rayon::prelude::*;
-    use reqwest::Client;
-    use std::path::Path;
-    use thiserror::Error;
+pub mod color;
 
-    pub use crate::AsciiColoredChar;
+pub type ColoredArt = Vec<ColoredString>;
 
-    #[derive(Error, Debug)]
-    pub enum ArtProcesingError {
-        #[error("Image processing error: {0}")]
-        ImageError(#[from] image::ImageError),
-        #[error("Network error: {0}")]
-        NetworkError(#[from] reqwest::Error),
-    }
+/// Error type for the ASCII art processing
+#[derive(Error, Debug)]
+pub enum ArtProcesingError {
+    #[error("Image processing error: {0}")]
+    ImageError(#[from] image::ImageError),
+    #[error("Network error: {0}")]
+    NetworkError(#[from] reqwest::Error),
+}
 
-    /// Creates an ASCII art of an image from a path
-    pub fn from_path(
-        path: &Path,
-        width: u32,
-        height: u32,
-    ) -> Result<Vec<Vec<AsciiColoredChar>>, ImageError> {
-        let image = image::open(path)?;
-        Ok(image_to_ascii(&image, width, height))
-    }
+/// Creates an ASCII art of an image from a path
+pub fn from_path(path: &Path, width: u32, height: u32) -> Result<ColoredArt, ImageError> {
+    let image = image::open(path)?;
+    Ok(image_to_ascii(&image, width, height))
+}
 
-    /// Creates an ASCII art of an image from a URL
-    pub async fn from_url(
-        url: &str,
-        width: u32,
-        height: u32,
-    ) -> Result<Vec<Vec<AsciiColoredChar>>, ArtProcesingError> {
-        let response = Client::new().get(url).send().await?;
-        let image_data = response.bytes().await?;
-        let image = image::load_from_memory(&image_data)?;
+/// Creates an ASCII art of an image from a URL
+pub async fn from_url(url: &str, width: u32, height: u32) -> Result<ColoredArt, ArtProcesingError> {
+    let response = Client::new().get(url).send().await?;
+    let image_data = response.bytes().await?;
+    let image = image::load_from_memory(&image_data)?;
 
-        Ok(image_to_ascii(&image, width, height))
-    }
+    Ok(image_to_ascii(&image, width, height))
+}
 
-    fn image_to_ascii(
-        image: &image::DynamicImage,
-        width: u32,
-        height: u32,
-    ) -> Vec<Vec<AsciiColoredChar>> {
-        // Based on tests, brightening the image gives better results (could be a skill issue)
-        const BRIGHTNESS_FACTOR: i32 = 55;
-        let brightened_image = image.brighten(BRIGHTNESS_FACTOR);
+fn image_to_ascii(image: &image::DynamicImage, width: u32, height: u32) -> ColoredArt {
+    // Based on tests, brightening the image gives better results (could be a skill issue)
+    const BRIGHTNESS_FACTOR: i32 = 45;
+    let brightened_image = image.brighten(BRIGHTNESS_FACTOR);
 
-        let resized_image =
-            brightened_image.resize_exact(width, height, image::imageops::FilterType::Lanczos3);
+    let resized_image =
+        brightened_image.resize_exact(width, height, image::imageops::FilterType::Lanczos3);
 
-        let (img_width, img_height) = resized_image.dimensions();
+    let (img_width, img_height) = resized_image.dimensions();
 
-        (0..img_height)
-            .into_par_iter()
-            .map(|y| {
+    (0..img_height)
+        .into_par_iter()
+        .map(|y| {
+            ColoredString::from(
                 (0..img_width)
-                    .into_par_iter()
-                    .map(|x| AsciiColoredChar::from(resized_image.get_pixel(x, y)))
-                    .collect::<Vec<_>>()
-            })
-            .collect()
-    }
+                    .map(|x| ColoredChar::from(resized_image.get_pixel(x, y)))
+                    .collect::<Vec<ColoredChar>>(),
+            )
+        })
+        .collect()
 }
 
-pub struct AsciiColoredChar {
-    pub character: char,
-    pub color: termcolor::Color,
-}
-
-impl AsciiColoredChar {
-    #[must_use]
-    pub const fn new(character: char, color: termcolor::Color) -> Self {
-        Self { character, color }
-    }
-}
-
-impl From<image::Rgba<u8>> for AsciiColoredChar {
+impl From<image::Rgba<u8>> for ColoredChar {
     fn from(pixel: image::Rgba<u8>) -> Self {
         const ASCII_CHARS: &[char] = &[
             '@', '#', '$', 'S', '%', '*', '+', ';', '-', ':', ',', '.', '\'', '"',
@@ -92,7 +67,7 @@ impl From<image::Rgba<u8>> for AsciiColoredChar {
         let [r, g, b, a] = pixel.0;
 
         if a < ALPHA_THRESHOLD {
-            return Self::new(' ', Color::Rgb(r, g, b));
+            return Self::new(' ', None);
         }
 
         // Brightness formula from : https://stackoverflow.com/a/596243
@@ -100,19 +75,7 @@ impl From<image::Rgba<u8>> for AsciiColoredChar {
 
         let ascii_index = ((255 - brightness) * (ASCII_CHARS_LEN - 1) as u32 / 255) as usize;
 
-        Self::new(ASCII_CHARS[ascii_index], Color::Rgb(r, g, b))
-    }
-}
-
-impl fmt::Display for AsciiColoredChar {
-    fn fmt(&self, _: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut stdout = StandardStream::stdout(ColorChoice::Always);
-        stdout
-            .set_color(ColorSpec::new().set_fg(Some(self.color)))
-            .map_err(|_| fmt::Error)?;
-        write!(&mut stdout, "{}", self.character).map_err(|_| fmt::Error)?;
-        stdout.reset().map_err(|_| fmt::Error)?;
-        Ok(())
+        Self::new(ASCII_CHARS[ascii_index], Some(Color::Rgb(r, g, b)))
     }
 }
 
