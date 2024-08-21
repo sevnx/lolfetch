@@ -11,7 +11,7 @@ pub trait MatchGetter {
     /// Returns x recent matches of a summoner.
     async fn get_recent_matches(
         &self,
-        api: RiotApi,
+        api: &RiotApi,
         route: RegionalRoute,
         count: i32,
         queue: Queue,
@@ -21,7 +21,7 @@ pub trait MatchGetter {
 impl MatchGetter for Summoner {
     async fn get_recent_matches(
         &self,
-        api: RiotApi,
+        api: &RiotApi,
         route: RegionalRoute,
         count: i32,
         queue: Queue,

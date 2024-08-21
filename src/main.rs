@@ -1,10 +1,12 @@
 use anyhow::Result;
 use clap::Parser;
 use cli::Options;
+use info::mastery::MasteryInfo;
 use info::match_history::RecentMatchesInfo;
 use info::summoner::SummonerInfo;
 use info::Sections;
 use riot_api::account::{PuuidGetter, RiotId};
+use riot_api::mastery::MasteryRetriever;
 use riot_api::matches::MatchGetter;
 use riot_api::rank::RankRetriever;
 use riot_api::ApiInstanceGetter;
@@ -38,12 +40,14 @@ async fn main() -> Result<()> {
 
     let matches = summoner
         .get_recent_matches(
-            api,
+            &api,
             route.to_regional(),
             5,
             Queue::SUMMONERS_RIFT_5V5_RANKED_SOLO,
         )
         .await?;
+
+    let masteries = summoner.get_mastery(&api, route, 5).await?;
 
     let art = lolfetch_ascii::from_url(&image_url, 50, 25)
         .await
@@ -51,15 +55,11 @@ async fn main() -> Result<()> {
             panic!("Error: {err}");
         });
 
-    let mut info_vec = Vec::new();
-
-    info_vec.push(Sections::SummonerInfo(SummonerInfo::new(
-        &riot_id,
-        ranked_entry,
-    )));
-    info_vec.push(Sections::RecentMatchesInfo(RecentMatchesInfo::new(
-        matches, &summoner,
-    )));
+    let info_vec = vec![
+        Sections::SummonerInfo(SummonerInfo::new(&riot_id, ranked_entry)),
+        Sections::RecentMatchesInfo(RecentMatchesInfo::new(matches, &summoner)),
+        Sections::MasteryInfo(MasteryInfo::new(masteries)),
+    ];
 
     Layout::new(art, info_vec).display()
 }

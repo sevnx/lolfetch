@@ -44,6 +44,8 @@ impl SectionInfoProvider for SummonerInfo {
             }
             _ => {}
         }
+        rank_string.push_str(" - ", None);
+        rank_string.push_str(&format!("{} LP", self.ranked.league_points), rank_color);
 
         vec.push(rank_string);
 

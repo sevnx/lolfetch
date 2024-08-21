@@ -3,7 +3,7 @@
 use riven::consts::RegionalRoute;
 use thiserror::Error as ThisError;
 
-/// RiotId, used to identify a user in the Riot API.
+/// `RiotId`, used to identify a user in the Riot API.
 #[derive(Debug, Clone)]
 pub struct RiotId {
     pub username: String,
@@ -18,7 +18,7 @@ impl RiotId {
         }
     }
 
-    /// Creates a RiotId from a string.
+    /// Creates a `RiotId` from a string.
     pub fn from_str(riot_id: &str) -> anyhow::Result<Self> {
         let mut split: Vec<&str> = riot_id.split('#').collect();
         if split.len() != 2 {
@@ -86,9 +86,8 @@ mod tests {
     #[test]
     fn test_bad_riot_id_from_string() {
         let riot_id = RiotId::from_str("username");
-        match riot_id {
-            Ok(_) => panic!("Parsed invalid Riot ID"),
-            Err(_) => {}
+        if let Ok(_) = riot_id {
+            panic!("Parsed invalid Riot ID")
         }
     }
 

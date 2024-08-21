@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use anyhow::Result;
 use lolfetch_ascii::color::{ColoredChar, ColoredString};
 use riven::models::{match_v5::Match, summoner_v4::Summoner};
@@ -5,8 +7,28 @@ use riven::models::{match_v5::Match, summoner_v4::Summoner};
 use super::SectionInfoProvider;
 
 pub struct RecentMatchesInfo {
-    pub matches: Vec<Match>,
-    pub summoner: Summoner,
+    matches: Vec<Match>,
+    summoner: Summoner,
+}
+
+struct Kda(i32, i32, i32);
+
+impl Kda {
+    fn get_kda(&self) -> Option<f64> {
+        let Self(kills, deaths, assists) = self;
+        if *deaths == 0 {
+            None
+        } else {
+            Some(f64::from(kills + assists) / f64::from(*deaths))
+        }
+    }
+}
+
+impl Display for Kda {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let Self(kills, deaths, assists) = self;
+        write!(f, "{kills}/{deaths}/{assists}")
+    }
 }
 
 impl RecentMatchesInfo {
@@ -59,23 +81,23 @@ impl RecentMatchesInfo {
             .max()
             .ok_or_else(|| anyhow::anyhow!("Failed to find max time"))?;
 
+        let kda = Kda(participant.kills, participant.deaths, participant.assists);
+
         let mut body_builder = ColoredString::new();
         // Game result
         body_builder.push(get_game_result_char(my_team.win));
         body_builder.push_str(
             &format!(
-                " - {} - {} - {}/{}/{} - ",
+                " - {} - {:<12}",
                 get_team_position(&participant.team_position),
-                participant.champion_name,
-                participant.kills,
-                participant.deaths,
-                participant.assists
+                participant.champion().unwrap().name().unwrap(),
             ),
             None,
         );
+        body_builder.push_str(&format!(" - {:8} - ", kda.to_string()), None);
 
         // KDA
-        if let Some(kda) = get_kda(participant.kills, participant.deaths, participant.assists) {
+        if let Some(kda) = kda.get_kda() {
             body_builder.push_str(&format!("{kda:.2} KDA"), None);
         } else {
             body_builder.push_str("Perfect", None);
@@ -89,7 +111,7 @@ impl RecentMatchesInfo {
         let duration = end - start;
         let total_minions = participant.total_minions_killed + participant.neutral_minions_killed;
         #[allow(clippy::cast_precision_loss)] // This is fine as duration is pretty small
-        let cspm = f64::from(total_minions) / duration as f64 / 60.0;
+        let cspm = f64::from(total_minions) / (duration as f64 / 60.0);
 
         body_builder.push_str(&format!(" - {cspm:.1} CS/M"), None);
         Ok(body_builder)
@@ -105,15 +127,6 @@ fn get_team_position(position: &str) -> &str {
         "BOTTOM" => "BOT",
         "UTILITY" => "SUP",
         _ => position,
-    }
-}
-
-/// Returns the KDA of a player
-fn get_kda(kills: i32, deaths: i32, assists: i32) -> Option<f64> {
-    if deaths == 0 {
-        None
-    } else {
-        Some(f64::from(kills + assists) / f64::from(deaths))
     }
 }
 

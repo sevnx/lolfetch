@@ -2,6 +2,7 @@
 
 use enum_dispatch::enum_dispatch;
 use lolfetch_ascii::color::ColoredString;
+use mastery::MasteryInfo;
 use match_history::RecentMatchesInfo;
 use summoner::SummonerInfo;
 
@@ -25,6 +26,7 @@ pub trait SectionInfoProvider {
 pub enum Sections {
     SummonerInfo,
     RecentMatchesInfo,
+    MasteryInfo,
 }
 
 impl Sections {

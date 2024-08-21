@@ -10,6 +10,7 @@ use std::env;
 use crate::cli::LeagueServer;
 
 pub mod account;
+pub mod mastery;
 pub mod matches;
 pub mod rank;
 
