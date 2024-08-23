@@ -1,5 +1,5 @@
 use lolfetch_ascii::color::ColoredString;
-use riven::models::{champion_mastery_v4::ChampionMastery, summoner_v4::Summoner};
+use riven::models::champion_mastery_v4::ChampionMastery;
 
 use super::SectionInfoProvider;
 
@@ -15,7 +15,7 @@ impl MasteryInfo {
 
 impl SectionInfoProvider for MasteryInfo {
     fn header(&self) -> Option<ColoredString> {
-        Some(ColoredString::from_str("Champion Masteries", None))
+        Some(ColoredString::from_str("Champion Masteries", None, None))
     }
 
     fn body(&self) -> Vec<ColoredString> {
@@ -28,7 +28,7 @@ impl SectionInfoProvider for MasteryInfo {
                 mastery.champion_level,
                 mastery.champion_points
             );
-            vec.push(ColoredString::from_str(&mastery_str, None));
+            vec.push(ColoredString::from_str(&mastery_str, None, None));
         }
         vec
     }

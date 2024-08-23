@@ -45,7 +45,7 @@ impl Layout {
 
         for (i, section) in self.info.iter().enumerate() {
             if i != 0 {
-                info_lines.push(ColoredString::from_str("", None));
+                info_lines.push(ColoredString::from_str("", None, None));
             }
             let section_lines = section.to_colored_string_vec(CENTER_PAD_LENGTH);
             info_lines.extend(section_lines);
@@ -96,7 +96,7 @@ impl Layout {
                 logo.display(&mut buffer)?;
             }
             Line::Info(info) => {
-                let logo_width = self.image.get(0).map(|line| line.len()).unwrap_or(0);
+                let logo_width = self.image.first().map(|line| line.len()).unwrap_or(0);
                 buffer.write(" ".repeat(logo_width + CENTER_PAD_LENGTH).as_bytes())?;
                 info.display(&mut buffer)?;
             }

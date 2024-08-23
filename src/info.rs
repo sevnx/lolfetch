@@ -1,11 +1,13 @@
 //! This module handles gathering information to display to the user.
 
+use champions::RecentChampionInfo;
 use enum_dispatch::enum_dispatch;
 use lolfetch_ascii::color::ColoredString;
 use mastery::MasteryInfo;
 use match_history::RecentMatchesInfo;
 use summoner::SummonerInfo;
 
+pub mod champions;
 pub mod mastery;
 pub mod match_history;
 pub mod ranked;
@@ -26,6 +28,7 @@ pub trait SectionInfoProvider {
 pub enum Sections {
     SummonerInfo,
     RecentMatchesInfo,
+    RecentChampionInfo,
     MasteryInfo,
 }
 
@@ -35,7 +38,11 @@ impl Sections {
 
         if let Some(header) = self.header() {
             vec.push(header);
-            vec.push(ColoredString::from_str(&"-".repeat(separator_size), None));
+            vec.push(ColoredString::from_str(
+                &"-".repeat(separator_size),
+                None,
+                None,
+            ));
         }
 
         self.body().iter().for_each(|body| {

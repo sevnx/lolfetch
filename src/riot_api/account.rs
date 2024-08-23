@@ -86,9 +86,7 @@ mod tests {
     #[test]
     fn test_bad_riot_id_from_string() {
         let riot_id = RiotId::from_str("username");
-        if let Ok(_) = riot_id {
-            panic!("Parsed invalid Riot ID")
-        }
+        assert!(!riot_id.is_ok(), "Parsed invalid Riot ID")
     }
 
     #[tokio_macros::test()]

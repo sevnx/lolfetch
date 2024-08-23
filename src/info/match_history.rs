@@ -1,34 +1,15 @@
-use std::fmt::Display;
-
+use super::SectionInfoProvider;
+use crate::utils::Kda;
 use anyhow::Result;
 use lolfetch_ascii::color::{ColoredChar, ColoredString};
-use riven::models::{match_v5::Match, summoner_v4::Summoner};
-
-use super::SectionInfoProvider;
+use riven::models::{
+    match_v5::{Match, Participant, Team},
+    summoner_v4::Summoner,
+};
 
 pub struct RecentMatchesInfo {
     matches: Vec<Match>,
     summoner: Summoner,
-}
-
-struct Kda(i32, i32, i32);
-
-impl Kda {
-    fn get_kda(&self) -> Option<f64> {
-        let Self(kills, deaths, assists) = self;
-        if *deaths == 0 {
-            None
-        } else {
-            Some(f64::from(kills + assists) / f64::from(*deaths))
-        }
-    }
-}
-
-impl Display for Kda {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let Self(kills, deaths, assists) = self;
-        write!(f, "{kills}/{deaths}/{assists}")
-    }
 }
 
 impl RecentMatchesInfo {
@@ -42,7 +23,7 @@ impl RecentMatchesInfo {
 
 impl SectionInfoProvider for RecentMatchesInfo {
     fn header(&self) -> Option<ColoredString> {
-        Some(ColoredString::from_str("Recent Matches", None))
+        Some(ColoredString::from_str("Recent Matches", None, None))
     }
 
     fn body(&self) -> Vec<ColoredString> {
@@ -59,27 +40,9 @@ impl SectionInfoProvider for RecentMatchesInfo {
 
 impl RecentMatchesInfo {
     fn format_match(&self, match_data: &Match) -> Result<ColoredString> {
-        let participant = match_data
-            .info
-            .participants
-            .iter()
-            .find(|p| p.puuid == self.summoner.puuid)
-            .ok_or_else(|| anyhow::anyhow!("Failed to find participant"))?;
-
-        let my_team = match_data
-            .info
-            .teams
-            .iter()
-            .find(|t| t.team_id == participant.team_id)
-            .ok_or_else(|| anyhow::anyhow!("Failed to find team"))?;
-
-        let max_time = match_data
-            .info
-            .participants
-            .iter()
-            .map(|p| p.time_played)
-            .max()
-            .ok_or_else(|| anyhow::anyhow!("Failed to find max time"))?;
+        let participant = match_data.get_participant(&self.summoner)?;
+        let my_team = match_data.get_my_team(participant)?;
+        let max_time = match_data.get_max_time()?;
 
         let kda = Kda(participant.kills, participant.deaths, participant.assists);
 
@@ -93,14 +56,15 @@ impl RecentMatchesInfo {
                 participant.champion().unwrap().name().unwrap(),
             ),
             None,
+            None,
         );
-        body_builder.push_str(&format!(" - {:8} - ", kda.to_string()), None);
+        body_builder.push_str(&format!(" - {:8} - ", kda.to_string()), None, None);
 
         // KDA
         if let Some(kda) = kda.get_kda() {
-            body_builder.push_str(&format!("{kda:.2} KDA"), None);
+            body_builder.push_str(&format!("{kda:.2} KDA"), None, None);
         } else {
-            body_builder.push_str("Perfect", None);
+            body_builder.push_str("Perfect", None, None);
         }
 
         // CS per minute
@@ -113,7 +77,7 @@ impl RecentMatchesInfo {
         #[allow(clippy::cast_precision_loss)] // This is fine as duration is pretty small
         let cspm = f64::from(total_minions) / (duration as f64 / 60.0);
 
-        body_builder.push_str(&format!(" - {cspm:.1} CS/M"), None);
+        body_builder.push_str(&format!(" - {cspm:.1} CS/M"), None, None);
         Ok(body_builder)
     }
 }
@@ -133,8 +97,51 @@ fn get_team_position(position: &str) -> &str {
 /// Returns a colored character representing the game result
 const fn get_game_result_char(won: bool) -> ColoredChar {
     if won {
-        ColoredChar::new('W', Some(termcolor::Color::Green))
+        ColoredChar::new('W', Some(termcolor::Color::Blue), None)
     } else {
-        ColoredChar::new('L', Some(termcolor::Color::Red))
+        ColoredChar::new('L', Some(termcolor::Color::Red), None)
+    }
+}
+
+pub trait ParticipantGetter {
+    fn get_participant(&self, summoner: &Summoner) -> Result<&Participant>;
+}
+
+impl ParticipantGetter for Match {
+    fn get_participant(&self, summoner: &Summoner) -> Result<&Participant> {
+        self.info
+            .participants
+            .iter()
+            .find(|p| p.puuid == summoner.puuid)
+            .ok_or_else(|| anyhow::anyhow!("Failed to find participant"))
+    }
+}
+
+pub trait TeamGetter {
+    fn get_my_team(&self, participant: &Participant) -> Result<&Team>;
+}
+
+impl TeamGetter for Match {
+    fn get_my_team(&self, participant: &Participant) -> Result<&Team> {
+        self.info
+            .teams
+            .iter()
+            .find(|t| t.team_id == participant.team_id)
+            .ok_or_else(|| anyhow::anyhow!("Failed to find team"))
+    }
+}
+
+pub trait GameTimeGetter {
+    fn get_max_time(&self) -> Result<i32>;
+}
+
+impl GameTimeGetter for Match {
+    fn get_max_time(&self) -> Result<i32> {
+        self.info
+            .participants
+            .iter()
+            .map(|p| p.time_played)
+            .max()
+            .ok_or_else(|| anyhow::anyhow!("Failed to find max time"))
     }
 }

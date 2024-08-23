@@ -1,6 +1,8 @@
 use anyhow::Result;
 use clap::Parser;
-use cli::Options;
+use cli::{ImageDisplay, Options};
+use dragon::{get_latest_patch, IconGetter};
+use info::champions::RecentChampionInfo;
 use info::mastery::MasteryInfo;
 use info::match_history::RecentMatchesInfo;
 use info::summoner::SummonerInfo;
@@ -16,9 +18,11 @@ use ui::image::ImgUrlGetter;
 use ui::Layout;
 
 mod cli;
+mod dragon;
 mod info;
 mod riot_api;
 mod ui;
+mod utils;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -34,20 +38,39 @@ async fn main() -> Result<()> {
 
     let ranked_entry = summoner.get_rank(&api, route).await?;
 
-    let rank = ranked_entry.tier.unwrap_or(riven::consts::Tier::UNRANKED);
+    let patch = get_latest_patch().await;
 
-    let image_url = args.path.map_or_else(|| rank.get_image_url(), |path| path);
+    let rank = ranked_entry.tier.unwrap_or(riven::consts::Tier::UNRANKED);
 
     let matches = summoner
         .get_recent_matches(
             &api,
             route.to_regional(),
-            5,
+            args.matches,
             Queue::SUMMONERS_RIFT_5V5_RANKED_SOLO,
         )
         .await?;
 
     let masteries = summoner.get_mastery(&api, route, 5).await?;
+
+    let image_url = match args.display {
+        ImageDisplay::Rank => rank.get_image_url(),
+        ImageDisplay::Mastery => masteries
+            .get(0)
+            .unwrap()
+            .champion_id
+            .get_icon_url()
+            .await
+            .unwrap_or_else(|| {
+                format!("https://cdn.communitydragon.org/{patch}/champion/generic/square")
+            }),
+        ImageDisplay::Icon => summoner.get_icon_url().await.unwrap_or_else(|| {
+            format!("https://cdn.communitydragon.org/{patch}/champion/generic/square")
+        }),
+        ImageDisplay::Custom => args.path.unwrap_or_else(|| {
+            format!("https://cdn.communitydragon.org/{patch}/champion/generic/square",)
+        }),
+    };
 
     let art = lolfetch_ascii::from_url(&image_url, 50, 25)
         .await
@@ -57,8 +80,11 @@ async fn main() -> Result<()> {
 
     let info_vec = vec![
         Sections::SummonerInfo(SummonerInfo::new(&riot_id, ranked_entry)),
-        Sections::RecentMatchesInfo(RecentMatchesInfo::new(matches, &summoner)),
-        Sections::MasteryInfo(MasteryInfo::new(masteries)),
+        Sections::RecentMatchesInfo(RecentMatchesInfo::new(matches.clone(), &summoner)),
+        Sections::RecentChampionInfo(
+            RecentChampionInfo::from_matches(&matches, &summoner).unwrap(),
+        ),
+        // Sections::MasteryInfo(MasteryInfo::new(masteries)),
     ];
 
     Layout::new(art, info_vec).display()

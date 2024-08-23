@@ -22,7 +22,7 @@ pub trait ApiInstanceGetter {
 impl ApiInstanceGetter for RiotApi {
     fn get_api_instance() -> Result<RiotApi> {
         let api_key = env::var("RIOT_API_KEY")?;
-        Ok(RiotApi::new(RiotApiConfig::with_key(api_key)))
+        Ok(Self::new(RiotApiConfig::with_key(api_key)))
     }
 }
 

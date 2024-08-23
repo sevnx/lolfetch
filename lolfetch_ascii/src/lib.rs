@@ -67,7 +67,7 @@ impl From<image::Rgba<u8>> for ColoredChar {
         let [r, g, b, a] = pixel.0;
 
         if a < ALPHA_THRESHOLD {
-            return Self::new(' ', None);
+            return Self::new(' ', None, None);
         }
 
         // Brightness formula from : https://stackoverflow.com/a/596243
@@ -75,7 +75,7 @@ impl From<image::Rgba<u8>> for ColoredChar {
 
         let ascii_index = ((255 - brightness) * (ASCII_CHARS_LEN - 1) as u32 / 255) as usize;
 
-        Self::new(ASCII_CHARS[ascii_index], Some(Color::Rgb(r, g, b)))
+        Self::new(ASCII_CHARS[ascii_index], Some(Color::Rgb(r, g, b)), None)
     }
 }
 
