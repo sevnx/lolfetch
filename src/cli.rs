@@ -2,23 +2,23 @@ use std::str::FromStr;
 use clap::{Parser, ValueEnum};
 use riven::consts::Champion;
 use crate::api::account::RiotId;
-use anyhow::Result;
+use anyhow::{Context, Error, Result};
 
 /// Command line arguments for the application
 #[derive(Debug, Parser)]
 #[command(author, version, about, long_about = None)]
-pub struct Args {
+pub struct Cli {
     /// Summoner information
     #[command(flatten)]
     pub summoner: SummonerConfig,
 
     /// Display options
     #[command(flatten)]
-    pub display: DisplayConfig,
+    pub display_config: DisplayConfig,
 
     /// Info display options
     #[command(flatten)]
-    pub info: InfoOptions,
+    pub info_config: InfoOptions,
 }
 
 #[derive(Parser, Debug, Clone)]
@@ -72,9 +72,10 @@ pub enum ImageSource {
 #[derive(Parser, Debug, Clone)]
 pub struct InfoOptions {
     /// Type of information to display
+    #[clap(long)]
     pub info: InfoType,
 
-    /// OPTIONAL: Number of matches to fetch for statistics (Ranked, Mastery, RecentMatches)
+    /// OPTIONAL: Number of matches to fetch for statistics (`Ranked`, `Mastery`, `RecentMatches`)
     #[clap(
         long, 
         default_value = "10", 
@@ -140,13 +141,14 @@ pub enum LeagueServer {
 }
 
 /// Parses the champion name from the command line
-fn parse_champion(champion_name: &str) -> Result<Champion> {
-    Ok(Champion::from_str(champion_name)?)
+fn parse_champion(champion_name: &str) -> Result<Champion, Error> {
+    Champion::from_str(champion_name).context("Invalid champion name")
 }
+
 
 /// Parses the number of games to fetch for ranked statistics
 fn parse_number_of_parsed_games(s: &str) -> Result<i32, String> {
-    /// We limit the number of matches to 75, as Riot API has a rate limit of 100 requests / 2 min
+    /// We limit the max number of matches to 75, as Riot API has a rate limit of 100 requests / 2 min
     const MAX_MATCHES: i32 = 75;
     match s.parse() {
         Ok(n) if n <= 10 && n > 0 => Ok(n),
