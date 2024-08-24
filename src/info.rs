@@ -2,7 +2,7 @@
 
 use champions::RecentChampionInfo;
 use enum_dispatch::enum_dispatch;
-use lolfetch_ascii::color::ColoredString;
+use lolfetch_color::ColoredString;
 use mastery::MasteryInfo;
 use match_history::RecentMatchesInfo;
 use summoner::SummonerInfo;

@@ -1,7 +1,7 @@
 use super::SectionInfoProvider;
 use crate::utils::Kda;
 use anyhow::Result;
-use lolfetch_ascii::color::{ColoredChar, ColoredString};
+use lolfetch_color::{ColoredChar, ColoredString};
 use riven::models::{
     match_v5::{Match, Participant, Team},
     summoner_v4::Summoner,

@@ -1071,6 +1071,7 @@ dependencies = [
  "dotenv",
  "enum_dispatch",
  "lolfetch-ascii",
+ "lolfetch_color",
  "reqwest 0.12.7",
  "riven",
  "termcolor",
@@ -1086,11 +1087,19 @@ version = "0.1.0"
 dependencies = [
  "colored",
  "image",
+ "lolfetch_color",
  "rayon",
  "reqwest 0.12.7",
  "termcolor",
  "thiserror",
  "url",
+]
+
+[[package]]
+name = "lolfetch_color"
+version = "0.1.0"
+dependencies = [
+ "termcolor",
 ]
 
 [[package]]

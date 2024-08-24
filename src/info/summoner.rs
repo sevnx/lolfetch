@@ -1,4 +1,4 @@
-use lolfetch_ascii::color::ColoredString;
+use lolfetch_color::ColoredString;
 use riven::models::league_v4::LeagueEntry;
 use termcolor::Color;
 

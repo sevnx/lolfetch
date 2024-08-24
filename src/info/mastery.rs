@@ -1,4 +1,4 @@
-use lolfetch_ascii::color::ColoredString;
+use lolfetch_color::ColoredString;
 use riven::models::champion_mastery_v4::ChampionMastery;
 
 use super::SectionInfoProvider;

@@ -4,7 +4,7 @@ use super::{
 };
 use crate::utils::Kda;
 use anyhow::Result;
-use lolfetch_ascii::color::ColoredString;
+use lolfetch_color::ColoredString;
 use riven::{
     consts::Champion,
     models::{match_v5::Match, summoner_v4::Summoner},

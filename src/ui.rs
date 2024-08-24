@@ -1,6 +1,7 @@
 use crate::info::Sections;
 use anyhow::Result;
-use lolfetch_ascii::{color::ColoredString, ColoredArt};
+use lolfetch_ascii::ColoredArt;
+use lolfetch_color::ColoredString;
 use std::io::Write;
 use termcolor::{Buffer, BufferWriter, ColorChoice};
 
