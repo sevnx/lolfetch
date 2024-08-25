@@ -1,3 +1,5 @@
+//! This module handles the command line arguments for the application.
+
 use std::str::FromStr;
 use clap::{Parser, ValueEnum};
 use riven::consts::Champion;
@@ -19,6 +21,10 @@ pub struct Cli {
     /// Info display options
     #[command(flatten)]
     pub info_config: InfoOptions,
+
+    /// API key for the Riot API
+    #[clap(long, default_value = "", value_parser = parse_api_key)]
+    pub api_key: String,
 }
 
 #[derive(Parser, Debug, Clone)]
@@ -94,7 +100,12 @@ pub struct InfoOptions {
     pub mastery_champions: i32,
 
     /// OPTIONAL: Number of recent matches to display
-    #[clap(long, default_value = "10", required_if_eq("info", "RecentMatches"))]
+    #[clap(
+        long, 
+        default_value = "5", 
+        required_if_eq("info", "RecentMatches"),
+        required_if_eq("info", "Ranked"), 
+    )]
     pub recent_matches: i32,
 
     // TODO: Define custom info options
@@ -138,6 +149,15 @@ pub enum LeagueServer {
     Th,
     Mena,
     Pbe,
+}
+
+/// Parses the Riot API key from the command line
+fn parse_api_key(s: &str) -> Result<String> {
+    if s.is_empty() {
+        std::env::var("RIOT_API_KEY").context("API key not found")
+    } else {
+        Ok(s.to_string())
+    }
 }
 
 /// Parses the champion name from the command line
