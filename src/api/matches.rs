@@ -14,7 +14,7 @@ pub trait MatchGetter {
         api: &RiotApi,
         route: RegionalRoute,
         count: i32,
-        queue: Queue,
+        queue: Option<Queue>,
     ) -> Result<Vec<Match>>;
 }
 
@@ -24,7 +24,7 @@ impl MatchGetter for Summoner {
         api: &RiotApi,
         route: RegionalRoute,
         count: i32,
-        queue: Queue,
+        queue: Option<Queue>,
     ) -> Result<Vec<Match>> {
         let match_list = api
             .match_v5()
@@ -33,7 +33,7 @@ impl MatchGetter for Summoner {
                 &self.puuid,
                 Some(count),
                 None,
-                Some(queue),
+                queue,
                 None,
                 None,
                 None,
@@ -42,7 +42,11 @@ impl MatchGetter for Summoner {
 
         let mut matches = Vec::new();
         for match_id in match_list {
-            let match_data = api.match_v5().get_match(route, &match_id).await?.unwrap();
+            let match_data = api
+                .match_v5()
+                .get_match(route, &match_id)
+                .await?
+                .ok_or_else(|| anyhow::anyhow!("Match with ID {} not found", match_id))?;
             matches.push(match_data);
         }
         Ok(matches)

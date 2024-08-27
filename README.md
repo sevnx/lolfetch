@@ -1,3 +1,5 @@
+# Lolfetch
+
 Lolfetch is a command-line League of Legends information tool written in Rust. Communication with the Riot API is done through the [Riven crate](https://github.com/MingweiSamuel/Riven).
 
 Inspired by [Neofetch](https://github.com/dylanaraps/neofetch) and [onefetch](https://github.com/o2sh/onefetch)

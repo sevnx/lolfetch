@@ -2,20 +2,17 @@
 //! It is used to load the configuration from CLI arguments and environment variables.
 
 use crate::api::account::RiotId;
-use crate::cli::{Cli, DisplayConfig, ImageSource, InfoOptions, InfoType, LeagueServer};
+use crate::cli::{Cli, DisplayConfig, ImageSource, InfoOptions, InfoType};
 use anyhow::{Context, Result};
-use riven::consts::Champion;
+use riven::consts::{Champion, PlatformRoute};
 
 #[derive(Debug, Clone)]
 pub struct Config {
     /// API key for the Riot API
     pub api_key: String,
 
-    /// Summoner information
-    pub riot_id: RiotId,
-
-    /// Server the account is registered on
-    pub server: LeagueServer,
+    /// Account information
+    pub account: Account,
 
     /// Type of image to display
     pub image: Image,
@@ -28,10 +25,12 @@ impl Config {
     pub fn from_cli(value: Cli) -> Result<Self> {
         Ok(Self {
             api_key: value.api_key,
-            riot_id: value.summoner.riot_id,
-            server: value.summoner.server,
+            account: Account {
+                riot_id: value.summoner.riot_id,
+                server: value.summoner.server.into(),
+            },
             image: Self::parse_image_config(value.display_config)?,
-            mode: Self::parse_mode_config(&value.info_config)?,
+            mode: Self::parse_mode_config(&value.info_config),
         })
     }
 
@@ -51,8 +50,8 @@ impl Config {
         })
     }
 
-    fn parse_mode_config(info: &InfoOptions) -> Result<Mode> {
-        Ok(match info.info {
+    fn parse_mode_config(info: &InfoOptions) -> Mode {
+        match info.info {
             InfoType::Ranked => Mode::Ranked(Ranked {
                 games: info.games,
                 top_champions: info.top_champions,
@@ -66,8 +65,18 @@ impl Config {
                 recent_matches: info.recent_matches,
             }),
             InfoType::Custom => Mode::Custom(Custom {}),
-        })
+        }
     }
+}
+
+/// Summoner information
+#[derive(Debug, Clone)]
+pub struct Account {
+    /// Riot ID of the summoner
+    pub riot_id: RiotId,
+
+    /// Server the account is registered on
+    pub server: PlatformRoute,
 }
 
 #[derive(Debug, Clone)]

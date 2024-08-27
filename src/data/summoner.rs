@@ -2,7 +2,7 @@ use lolfetch_color::ColoredString;
 use riven::models::league_v4::LeagueEntry;
 use termcolor::Color;
 
-use crate::{riot_api::account::RiotId, ui::color::RankColorGetter};
+use crate::{api::account::RiotId, display::utils::RankColorGetter};
 
 use super::SectionInfoProvider;
 

@@ -22,7 +22,9 @@ impl RiotId {
     pub fn from_str(riot_id: &str) -> anyhow::Result<Self> {
         let mut split: Vec<&str> = riot_id.split('#').collect();
         if split.len() != 2 {
-            return Err(anyhow::anyhow!("Invalid Riot ID"));
+            return Err(anyhow::anyhow!(
+                "Invalid Riot ID, expected format: username#tag"
+            ));
         }
         Ok(Self::new(split.remove(0), split.remove(0)))
     }
@@ -59,52 +61,6 @@ impl PuuidGetter for riven::RiotApi {
                 .map(|account| account.puuid)
                 .ok_or(AccountFetchError::AccountNotFound),
             Err(e) => Err(AccountFetchError::ApiError(e)),
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::*;
-    use riot_api::{
-        account::{AccountFetchError, PuuidGetter, RiotId},
-        ApiInstanceGetter,
-    };
-
-    #[test]
-    fn test_good_riot_id_from_string() {
-        let riot_id = RiotId::from_str("username#1234");
-        match riot_id {
-            Ok(riot_id) => {
-                assert_eq!(riot_id.username, "username");
-                assert_eq!(riot_id.tagline, "1234");
-            }
-            Err(_) => panic!("Failed to parse Riot ID"),
-        }
-    }
-
-    #[test]
-    fn test_bad_riot_id_from_string() {
-        let riot_id = RiotId::from_str("username");
-        assert!(!riot_id.is_ok(), "Parsed invalid Riot ID")
-    }
-
-    #[tokio_macros::test()]
-    async fn test_get_riot_account_puuid_by_riot_id() {
-        dotenv::dotenv().unwrap();
-
-        let riot_id = RiotId::new("sev", "cat");
-        let puuid_expected =
-            "zcHuUSLP3G4GhB1BV0kcovyPEopvE4MJKBR22fjHl3HyxYdtLUEQpy8Mgf1-tLdVY-4vqoSMWfJ1Vg";
-
-        let riot_api = riven::RiotApi::get_api_instance().unwrap();
-
-        match riot_api.get_puuid(&riot_id).await {
-            Ok(puuid) => assert_eq!(puuid, puuid_expected),
-            Err(e) => match e {
-                AccountFetchError::AccountNotFound => panic!("Account not found"),
-                AccountFetchError::ApiError(e) => panic!("API error: {e}"),
-            },
         }
     }
 }

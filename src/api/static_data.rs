@@ -1,4 +1,6 @@
-//! This module contains communication with Dragon (DDragon and CommunityDragon) APIs for fetching images.
+//! This module contains communication with static data from
+//! - [Data Dragon](https://developer.riotgames.com/docs/lol#data-dragon)
+//! - [Community Dragon](https://communitydragon.org/)
 
 use riven::{consts::Champion, models::summoner_v4::Summoner};
 use tokio::sync::OnceCell;
@@ -10,10 +12,10 @@ pub async fn get_latest_patch() -> &'static String {
         let url = "https://ddragon.leagueoflegends.com/api/versions.json";
         let patch = reqwest::get(url)
             .await
-            .unwrap()
+            .unwrap_or_else(|_| panic!("Failed to fetch patch version from {url}"))
             .json::<Vec<String>>()
             .await
-            .unwrap();
+            .unwrap_or_else(|_| panic!("Failed to parse patch version from {url}"));
         patch[0].clone()
     })
     .await

@@ -1,10 +1,10 @@
 //! This module handles the command line arguments for the application.
 
-use std::str::FromStr;
-use clap::{Parser, ValueEnum};
-use riven::consts::Champion;
 use crate::api::account::RiotId;
 use anyhow::{Context, Error, Result};
+use clap::{Parser, ValueEnum};
+use riven::consts::Champion;
+use std::str::FromStr;
 
 /// Command line arguments for the application
 #[derive(Debug, Parser)]
@@ -81,33 +81,21 @@ pub struct InfoOptions {
     #[clap(long)]
     pub info: InfoType,
 
-    /// OPTIONAL: Number of matches to fetch for statistics (`Ranked`, `Mastery`, `RecentMatches`)
-    #[clap(
-        long, 
-        default_value = "10", 
-        value_parser = parse_number_of_parsed_games, 
-        required_if_eq("info", "Ranked"), 
-        required_if_eq("info", "Mastery"), 
-    )]
+    /// Number of games to fetch for ranked statistics
+    #[clap(long, default_value = "10", value_parser = parse_number_of_parsed_games)]
     pub games: i32,
 
-    /// OPTIONAL: Number of top champions to display
-    #[clap(long, default_value = "5", required_if_eq("info", "Ranked"))]
+    /// Number of top champions to display
+    #[clap(long, default_value = "5")]
     pub top_champions: i32,
 
-    /// OPTIONAL: Number of mastery champions to fetch
-    #[clap(long, default_value = "10", required_if_eq("info", "Mastery"))]
+    /// Number of mastery champions to fetch
+    #[clap(long, default_value = "10")]
     pub mastery_champions: i32,
 
-    /// OPTIONAL: Number of recent matches to display
-    #[clap(
-        long, 
-        default_value = "5", 
-        required_if_eq("info", "RecentMatches"),
-        required_if_eq("info", "Ranked"), 
-    )]
+    /// Number of recent matches to display
+    #[clap(long, default_value = "5")]
     pub recent_matches: i32,
-
     // TODO: Define custom info options
 }
 
@@ -164,7 +152,6 @@ fn parse_api_key(s: &str) -> Result<String> {
 fn parse_champion(champion_name: &str) -> Result<Champion, Error> {
     Champion::from_str(champion_name).context("Invalid champion name")
 }
-
 
 /// Parses the number of games to fetch for ranked statistics
 fn parse_number_of_parsed_games(s: &str) -> Result<i32, String> {

@@ -1,12 +1,11 @@
-use crate::info::Sections;
+use crate::data::Sections;
 use anyhow::Result;
 use lolfetch_ascii::ColoredArt;
 use lolfetch_color::ColoredString;
 use std::io::Write;
 use termcolor::{Buffer, BufferWriter, ColorChoice};
 
-pub mod color;
-pub mod image;
+pub mod utils;
 
 const CENTER_PAD_LENGTH: usize = 5;
 
