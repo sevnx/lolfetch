@@ -23,25 +23,25 @@ pub async fn get_latest_patch() -> &'static String {
 
 pub trait IconGetter {
     /// Returns the icon.
-    async fn get_icon_url(&self) -> Option<String>;
+    async fn get_icon_url(&self) -> String;
 }
 
 impl IconGetter for Summoner {
-    async fn get_icon_url(&self) -> Option<String> {
-        Some(format!(
+    async fn get_icon_url(&self) -> String {
+        format!(
             "https://cdn.communitydragon.org/{}/profile-icon/{}",
             get_latest_patch().await,
             self.profile_icon_id
-        ))
+        )
     }
 }
 
 impl IconGetter for Champion {
-    async fn get_icon_url(&self) -> Option<String> {
-        Some(format!(
+    async fn get_icon_url(&self) -> String {
+        format!(
             "http://ddragon.leagueoflegends.com/cdn/{}/img/champion/{}.png",
             get_latest_patch().await,
             self
-        ))
+        )
     }
 }

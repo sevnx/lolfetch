@@ -1,8 +1,8 @@
+use super::Kda;
 use super::{
     match_history::{GameTimeGetter, ParticipantGetter, TeamGetter},
     SectionInfoProvider,
 };
-use crate::utils::Kda;
 use anyhow::Result;
 use lolfetch_color::ColoredString;
 use riven::{

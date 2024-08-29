@@ -1,5 +1,5 @@
+use super::Kda;
 use super::SectionInfoProvider;
-use crate::utils::Kda;
 use anyhow::Result;
 use lolfetch_color::{ColoredChar, ColoredString};
 use riven::models::{

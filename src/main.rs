@@ -11,5 +11,5 @@ mod display;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    App::run()
+    App::run().await
 }
