@@ -7,6 +7,8 @@ use riven::{
     RiotApi,
 };
 
+use crate::config::{Config, Image, Mode};
+
 pub trait RankRetriever {
     /// Returns the rank of a summoner.
     async fn get_rank(
@@ -67,5 +69,32 @@ impl RankedInfo {
             wins: entry.wins,
             losses: entry.losses,
         })
+    }
+}
+
+pub trait RankFetcher {
+    /// Fetches the rank of a summoner.
+    async fn fetch_rank(
+        &self,
+        summonner: &Summoner,
+        queue: QueueType,
+        config: &Config,
+    ) -> Result<Option<RankedInfo>>;
+}
+
+impl RankFetcher for RiotApi {
+    async fn fetch_rank(
+        &self,
+        summonner: &Summoner,
+        queue: QueueType,
+        config: &Config,
+    ) -> Result<Option<RankedInfo>> {
+        if matches!(config.mode, Mode::Ranked(_)) || matches!(config.image, Image::RankIcon) {
+            let route = config.account.server.into();
+            let rank = summonner.get_rank(self, route, queue).await?;
+            Ok(Some(rank))
+        } else {
+            Ok(None)
+        }
     }
 }

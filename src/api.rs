@@ -1,8 +1,8 @@
 //! Module that handles the interaction with the various APIs used to gather data.
 
-use account::PuuidGetter;
-use matches::MatchGetter;
-use rank::RankRetriever;
+use account::AccountFetcher;
+use matches::{MatchFetcher, MatchGetter};
+use rank::{RankFetcher, RankRetriever};
 use riven::{
     consts::{Queue, QueueType},
     models::{champion_mastery_v4, match_v5},
@@ -48,54 +48,23 @@ use anyhow::Result;
 impl Fetcher for RiotApi {
     async fn fetch(&self, config: &Config) -> Result<Data> {
         // Construct commonly used data structs for fetching data.
-        let route = config.account.server.into();
-        let summonner = self
-            .summoner_v4()
-            .get_by_puuid(route, &self.get_puuid(&config.account.riot_id).await?)
-            .await?;
+        let summoner = self.fetch_summoner(&config.account).await?;
 
         // Ranked information.
-        let ranked = match config.mode {
-            Mode::Ranked(_) => Some(
-                summonner
-                    .get_rank(self, route, QueueType::RANKED_SOLO_5x5)
-                    .await?,
-            ),
-            _ => match config.image {
-                Image::RankIcon => Some(
-                    summonner
-                        .get_rank(self, route, QueueType::RANKED_SOLO_5x5)
-                        .await?,
-                ),
-                _ => None,
-            },
-        };
+        let ranked = self
+            .fetch_rank(&summoner, QueueType::RANKED_SOLO_5x5, config)
+            .await?;
 
-        // Game fetcher.
-        let (fetched_games, queue) = match config.mode {
-            Mode::Ranked(ref ranked) => (
-                Some(ranked.games),
-                Some(Queue::SUMMONERS_RIFT_5V5_RANKED_SOLO),
-            ),
-            Mode::Mastery(ref mastery) => (Some(mastery.games), None),
-            Mode::RecentMatches(ref recent_matches) => (Some(recent_matches.recent_matches), None),
-            Mode::Custom(_) => (None, None),
-        };
-        let matches = match fetched_games {
-            Some(games) => Some(
-                summonner
-                    .get_recent_matches(self, route.to_regional(), games, queue)
-                    .await?,
-            ),
-            None => None,
-        };
+        let matches = self
+        .fetch_recent_matches(&summoner, config.account.server.to_regional(), &config.mode)
+            .await?;
 
         // Image URL.
         let image = match config.image.clone() {
             Image::Default => None,
             Image::RankIcon => Some(ranked.as_ref().unwrap().tier.get_image_url()),
             Image::ChampionIcon(champ) => Some(champ.get_icon_url().await),
-            Image::SummonerIcon => Some(summonner.get_icon_url().await),
+            Image::SummonerIcon => Some(summoner.get_icon_url().await),
             Image::Custom(url) => Some(url),
         };
 

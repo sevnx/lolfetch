@@ -97,7 +97,7 @@ pub enum Image {
     Custom(String),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Mode {
     /// Displays information aobut ranked games
     Ranked(Ranked),
@@ -113,7 +113,7 @@ pub enum Mode {
 }
 
 /// Configuration for the display of ranked information
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Ranked {
     /// Number of games to fetch
     pub games: i32,
@@ -126,7 +126,7 @@ pub struct Ranked {
 }
 
 /// Configuration for the display of mastery information
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Mastery {
     /// Number of games to fetch
     pub games: i32,
@@ -136,14 +136,14 @@ pub struct Mastery {
 }
 
 /// Configuration for the display of recent matches
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RecentMatches {
     /// Number of games to fetch and display
     pub recent_matches: i32,
 }
 
 /// Configuration for the display of custom information
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Custom {
     // TODO: Define the custom configuration
 }

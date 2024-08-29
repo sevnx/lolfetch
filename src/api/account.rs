@@ -1,7 +1,9 @@
 //! Accounts
 
-use riven::consts::RegionalRoute;
+use riven::{consts::RegionalRoute, models::summoner_v4};
 use thiserror::Error as ThisError;
+
+use crate::config;
 
 /// `RiotId`, used to identify a user in the Riot API.
 #[derive(Debug, Clone)]
@@ -44,7 +46,7 @@ pub enum AccountFetchError {
     ApiError(#[from] riven::RiotApiError),
 }
 
-pub trait PuuidGetter {
+trait PuuidGetter {
     /// Returns the PUUID of a user.
     /// Checks all regions for the user.
     async fn get_puuid(&self, riot_id: &RiotId) -> Result<String, AccountFetchError>;
@@ -62,5 +64,26 @@ impl PuuidGetter for riven::RiotApi {
                 .ok_or(AccountFetchError::AccountNotFound),
             Err(e) => Err(AccountFetchError::ApiError(e)),
         }
+    }
+}
+
+pub trait AccountFetcher {
+    /// Fetches the summoner
+    async fn fetch_summoner(
+        &self,
+        config: &config::Account,
+    ) -> Result<summoner_v4::Summoner, AccountFetchError>;
+}
+
+impl AccountFetcher for riven::RiotApi {
+    async fn fetch_summoner(
+        &self,
+        config: &config::Account,
+    ) -> Result<summoner_v4::Summoner, AccountFetchError> {
+        let route = config.server.into();
+        self.summoner_v4()
+            .get_by_puuid(route, &self.get_puuid(&config.riot_id).await?)
+            .await
+            .map_err(AccountFetchError::from)
     }
 }

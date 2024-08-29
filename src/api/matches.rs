@@ -7,6 +7,8 @@ use riven::{
     RiotApi,
 };
 
+use crate::config::{self, Mode};
+
 pub trait MatchGetter {
     /// Returns x recent matches of a summoner.
     async fn get_recent_matches(
@@ -50,5 +52,60 @@ impl MatchGetter for Summoner {
             matches.push(match_data);
         }
         Ok(matches)
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct MatchCriteria {
+    pub count: i32,
+    pub queue: Option<Queue>,
+}
+
+impl Mode {
+    fn to_match_criteria(&self) -> Option<MatchCriteria> {
+        match self {
+            Mode::Ranked(ref ranked) => Some(MatchCriteria {
+                count: ranked.games,
+                queue: Some(Queue::SUMMONERS_RIFT_5V5_RANKED_SOLO),
+            }),
+            Mode::Mastery(ref mastery) => Some(MatchCriteria {
+                count: mastery.games,
+                queue: None,
+            }),
+            Mode::RecentMatches(ref recent_matches) => Some(MatchCriteria {
+                count: recent_matches.recent_matches,
+                queue: None,
+            }),
+            Mode::Custom(_) => None,
+        }
+    }
+}
+
+pub trait MatchFetcher {
+    /// Fetches the recent matches of a summoner.
+    async fn fetch_recent_matches(
+        &self,
+        summoner: &Summoner,
+        route: RegionalRoute,
+        config: &config::Mode,
+    ) -> Result<Option<Vec<Match>>>;
+}
+
+impl MatchFetcher for RiotApi {
+    async fn fetch_recent_matches(
+        &self,
+        summoner: &Summoner,
+        route: RegionalRoute,
+        config: &config::Mode,
+    ) -> Result<Option<Vec<Match>>> {
+        let criteria = config.to_match_criteria().ok_or(anyhow::anyhow!(
+            "Invalid mode for fetching matches: {:?}",
+            config
+        ))?;
+
+        summoner
+            .get_recent_matches(self, route, criteria.count, criteria.queue)
+            .await
+            .map(Some)
     }
 }

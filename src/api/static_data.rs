@@ -5,6 +5,8 @@
 use riven::{consts::Champion, models::summoner_v4::Summoner};
 use tokio::sync::OnceCell;
 
+use crate::config::{self, Image};
+
 static ONCE: OnceCell<String> = OnceCell::const_new();
 
 pub async fn get_latest_patch() -> &'static String {
