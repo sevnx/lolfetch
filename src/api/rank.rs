@@ -2,7 +2,7 @@
 
 use crate::config::{Config, Image, Mode};
 use riven::{
-    consts::{Division, PlatformRoute, QueueType, Tier},
+    consts::{PlatformRoute, QueueType},
     models::{league_v4::LeagueEntry, summoner_v4::Summoner},
     RiotApi,
 };

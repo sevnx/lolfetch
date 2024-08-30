@@ -1,6 +1,6 @@
 //! Module that handles the interaction with the various APIs used to gather data.
 
-use crate::config::{Config, Image};
+use crate::config::{Config, Image, Mode};
 use account::Fetcher as AccountFetcher;
 use anyhow::Result;
 use mastery::Fetcher as MasteryFetcher;
@@ -36,7 +36,7 @@ pub struct Data {
     /// Champion masteries.
     pub masteries: Option<Vec<champion_mastery_v4::ChampionMastery>>,
     /// Image URL.
-    pub image_url: Option<String>,
+    pub image_url: String,
 }
 
 // TODO: Clean up
@@ -59,13 +59,42 @@ impl Fetcher for RiotApi {
             .fetch_mastery(&summoner, config.account.server, &config.mode)
             .await?;
 
-        // Image URL.
+        // TODO: CLEAN THIS UP
         let image_url = match config.image.clone() {
-            Image::Default => None,
-            Image::RankIcon => Some(ranked.as_ref().unwrap().tier.unwrap().get_icon_url().await),
-            Image::ChampionIcon(champ) => Some(champ.get_icon_url().await),
-            Image::SummonerIcon => Some(summoner.get_icon_url().await),
-            Image::Custom(url) => Some(url),
+            Image::Default => match config.mode {
+                Mode::Ranked(_) => ranked.as_ref().unwrap().tier.unwrap().get_icon_url().await,
+                Mode::Mastery(_) => {
+                    masteries
+                        .as_ref()
+                        .unwrap()
+                        .first()
+                        .unwrap()
+                        .champion_id
+                        .get_icon_url()
+                        .await
+                }
+                Mode::RecentMatches(_) => {
+                    matches
+                        .as_ref()
+                        .unwrap()
+                        .first()
+                        .unwrap()
+                        .info
+                        .participants
+                        .iter()
+                        .find(|p| p.puuid == summoner.puuid)
+                        .unwrap()
+                        .champion()
+                        .unwrap()
+                        .get_icon_url()
+                        .await
+                }
+                Mode::Custom(_) => anyhow::bail!("Custom mode cannot use default image"),
+            },
+            Image::RankIcon => ranked.as_ref().unwrap().tier.unwrap().get_icon_url().await,
+            Image::ChampionIcon(champ) => champ.get_icon_url().await,
+            Image::SummonerIcon => summoner.get_icon_url().await,
+            Image::Custom(url) => url,
         };
 
         Ok(Data {

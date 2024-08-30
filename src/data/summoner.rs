@@ -1,32 +1,37 @@
-use lolfetch_color::ColoredString;
-use riven::models::league_v4::LeagueEntry;
-use termcolor::Color;
-
-use crate::{api::account::RiotId, display::utils::RankColorGetter};
+//! Provides information about a summoner.
 
 use super::SectionInfoProvider;
+use crate::{api::account::RiotId, display::utils::RankColorGetter, models::ranked::RankedInfo};
+use lolfetch_color::ColoredString;
+use termcolor::Color;
 
-pub struct SummonerInfo {
+pub struct Info {
     pub riot_id: RiotId,
-    pub ranked: LeagueEntry,
+
+    /// Rnak information of the summoner.
+    /// It is optional because this struct can be used to display information about a summoner
+    /// without a rank.
+    pub ranked: Option<RankedInfo>,
 }
 
-impl SummonerInfo {
-    pub fn new(riot_id: &RiotId, ranked: LeagueEntry) -> Self {
+impl Info {
+    pub fn new(riot_id: &RiotId, ranked: Option<RankedInfo>) -> Self {
         Self {
             riot_id: riot_id.clone(),
-            ranked,
+            // Filter out unranked tiers (since it is useless to display them).
+            ranked: ranked.filter(|r| r.tier != riven::consts::Tier::UNRANKED),
         }
     }
 }
 
-impl SectionInfoProvider for SummonerInfo {
-    fn header(&self) -> Option<ColoredString> {
+impl SectionInfoProvider for Info {
+    fn header(&self) -> Option<String> {
         None
     }
 
     fn body(&self) -> Vec<ColoredString> {
         let mut vec = Vec::new();
+
         // Name
         vec.push(ColoredString::from_str(
             &format!("Name: {}", self.riot_id),
@@ -34,46 +39,53 @@ impl SectionInfoProvider for SummonerInfo {
             None,
         ));
 
+        // Early return if the summoner is unranked.
+        let ranked_info = match &self.ranked {
+            Some(ranked) => ranked,
+            None => return vec,
+        };
+
         // Rank
         let mut rank_string = ColoredString::new();
-        let rank = self.ranked.tier.unwrap_or(riven::consts::Tier::UNRANKED);
+
+        let rank = ranked_info.tier;
         let rank_color = rank.get_rank_color();
         rank_string.push_str("Rank: ", None, None);
         rank_string.push_str(&format!("{rank}"), rank_color, None);
-        match self.ranked.rank {
+
+        match ranked_info.division {
             Some(division) if !rank.is_apex() => {
                 rank_string.push_str(" ", None, None);
                 rank_string.push_str(&format!("{division}"), rank_color, None);
             }
             _ => {}
         }
+
+        // LP
         rank_string.push_str(" - ", None, None);
-        rank_string.push_str(
-            &format!("{} LP", self.ranked.league_points),
-            rank_color,
-            None,
-        );
+        rank_string.push_str(&format!("{} LP", ranked_info.lp), rank_color, None);
         vec.push(rank_string);
 
         // Winrate
         let mut winrate_string = ColoredString::from_str(&" ".repeat(6), None, None);
         let winrate_bar =
-            generate_winrate_bar(self.ranked.wins, self.ranked.losses, 30, rank_color);
+            generate_winrate_bar(ranked_info.wins, ranked_info.losses, 30, rank_color);
         winrate_string.join(&winrate_bar);
+
         winrate_string.push_str(
             &format!(
                 " {:.1}%",
-                (f64::from(self.ranked.wins) / f64::from(self.ranked.wins + self.ranked.losses))
-                    * 100.0
+                get_winrate(ranked_info.wins, ranked_info.losses).unwrap() * 100.0
             ),
             rank_color,
             None,
         );
+
         winrate_string.push_str(
             &format!(
                 " ({wins}W/{losses}L)",
-                wins = self.ranked.wins,
-                losses = self.ranked.losses
+                wins = ranked_info.wins,
+                losses = ranked_info.losses
             ),
             None,
             None,
@@ -81,6 +93,15 @@ impl SectionInfoProvider for SummonerInfo {
         vec.push(winrate_string);
 
         vec
+    }
+}
+
+fn get_winrate(wins: i32, losses: i32) -> Option<f64> {
+    let total = wins + losses;
+    if total == 0 {
+        None
+    } else {
+        Some(f64::from(wins) / f64::from(total))
     }
 }
 

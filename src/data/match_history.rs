@@ -1,4 +1,5 @@
-use super::Kda;
+use crate::models::matches::Kda;
+
 use super::SectionInfoProvider;
 use anyhow::Result;
 use lolfetch_color::{ColoredChar, ColoredString};
@@ -22,8 +23,8 @@ impl RecentMatchesInfo {
 }
 
 impl SectionInfoProvider for RecentMatchesInfo {
-    fn header(&self) -> Option<ColoredString> {
-        Some(ColoredString::from_str("Recent Matches", None, None))
+    fn header(&self) -> Option<String> {
+        Some("Recent Matches".to_string())
     }
 
     fn body(&self) -> Vec<ColoredString> {

@@ -47,8 +47,8 @@ impl Layout {
             if i != 0 {
                 info_lines.push(ColoredString::from_str("", None, None));
             }
-            let section_lines = section.to_colored_string_vec(CENTER_PAD_LENGTH);
-            info_lines.extend(section_lines);
+            // let section_lines = section.to_colored_string_vec(CENTER_PAD_LENGTH);
+            // info_lines.extend(section_lines);
         }
 
         let mut info_lines = info_lines.iter();

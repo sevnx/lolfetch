@@ -14,8 +14,8 @@ impl MasteryInfo {
 }
 
 impl SectionInfoProvider for MasteryInfo {
-    fn header(&self) -> Option<ColoredString> {
-        Some(ColoredString::from_str("Champion Masteries", None, None))
+    fn header(&self) -> Option<String> {
+        Some("Champion Masteries".to_string())
     }
 
     fn body(&self) -> Vec<ColoredString> {

@@ -1,4 +1,5 @@
-use super::Kda;
+use crate::models::matches::Kda;
+
 use super::{
     match_history::{GameTimeGetter, ParticipantGetter, TeamGetter},
     SectionInfoProvider,
@@ -86,8 +87,8 @@ impl RecentChampionInfo {
 }
 
 impl SectionInfoProvider for RecentChampionInfo {
-    fn header(&self) -> Option<ColoredString> {
-        Some(ColoredString::from_str("Recent Champions", None, None))
+    fn header(&self) -> Option<String> {
+        Some("Recent Champions".to_string())
     }
 
     fn body(&self) -> Vec<ColoredString> {
