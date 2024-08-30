@@ -8,6 +8,7 @@ mod cli;
 mod config;
 mod data;
 mod display;
+mod models;
 
 #[tokio::main]
 async fn main() -> Result<()> {

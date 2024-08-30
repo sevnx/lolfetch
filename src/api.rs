@@ -8,7 +8,7 @@ use matches::Fetcher as MatchesFetcher;
 use rank::Fetcher as RankFetcher;
 use riven::{
     consts::QueueType,
-    models::{champion_mastery_v4, match_v5},
+    models::{champion_mastery_v4, league_v4, match_v5},
     RiotApi,
 };
 use tooling::static_data::IconGetter;
@@ -30,7 +30,7 @@ pub trait Fetcher {
 #[derive(Debug, Default)]
 pub struct Data {
     /// Ranked information.
-    pub ranked: Option<rank::RankedInfo>,
+    pub ranked: Option<league_v4::LeagueEntry>,
     /// Matches.
     pub matches: Option<Vec<match_v5::Match>>,
     /// Champion masteries.
@@ -62,7 +62,7 @@ impl Fetcher for RiotApi {
         // Image URL.
         let image_url = match config.image.clone() {
             Image::Default => None,
-            Image::RankIcon => Some(ranked.as_ref().unwrap().tier.get_icon_url().await),
+            Image::RankIcon => Some(ranked.as_ref().unwrap().tier.unwrap().get_icon_url().await),
             Image::ChampionIcon(champ) => Some(champ.get_icon_url().await),
             Image::SummonerIcon => Some(summoner.get_icon_url().await),
             Image::Custom(url) => Some(url),

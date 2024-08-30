@@ -24,7 +24,7 @@ trait Retriever {
         summonner: &Summoner,
         route: PlatformRoute,
         queue: QueueType,
-    ) -> Result<RankedInfo, RetrieverError>;
+    ) -> Result<LeagueEntry, RetrieverError>;
 }
 
 impl Retriever for RiotApi {
@@ -33,7 +33,7 @@ impl Retriever for RiotApi {
         summonner: &Summoner,
         route: PlatformRoute,
         queue: QueueType,
-    ) -> Result<RankedInfo, RetrieverError> {
+    ) -> Result<LeagueEntry, RetrieverError> {
         let entries = self
             .league_v4()
             .get_league_entries_for_summoner(route, &summonner.id)
@@ -41,40 +41,11 @@ impl Retriever for RiotApi {
 
         for entry in entries {
             if entry.queue_type == queue {
-                return RankedInfo::from_entry(entry).ok_or(RetrieverError::NoRankFound(queue));
+                return Ok(entry);
             }
         }
 
         Err(RetrieverError::NoRankFound(queue))
-    }
-}
-
-#[derive(Debug)]
-pub struct RankedInfo {
-    pub queue: QueueType,
-    pub tier: Tier,
-    pub division: Option<Division>,
-    pub lp: i32,
-    pub wins: i32,
-    pub losses: i32,
-}
-
-impl RankedInfo {
-    /// Tries to create a `RankedInfo` from a `LeagueEntry`.
-    /// Returns `None` if the queue type is not `RANKED_SOLO_5x5` or `RANKED_FLEX_SR`.
-    fn from_entry(entry: LeagueEntry) -> Option<Self> {
-        match entry.queue_type {
-            QueueType::RANKED_SOLO_5x5 | QueueType::RANKED_FLEX_SR => {}
-            _ => return None,
-        }
-        Some(Self {
-            queue: entry.queue_type,
-            tier: entry.tier.unwrap_or(Tier::UNRANKED),
-            division: entry.rank,
-            lp: entry.league_points,
-            wins: entry.wins,
-            losses: entry.losses,
-        })
     }
 }
 
@@ -91,7 +62,7 @@ pub trait Fetcher {
         summonner: &Summoner,
         queue: QueueType,
         config: &Config,
-    ) -> Result<Option<RankedInfo>, FetcherError>;
+    ) -> Result<Option<LeagueEntry>, FetcherError>;
 }
 
 impl Fetcher for RiotApi {
@@ -100,7 +71,7 @@ impl Fetcher for RiotApi {
         summonner: &Summoner,
         queue: QueueType,
         config: &Config,
-    ) -> Result<Option<RankedInfo>, FetcherError> {
+    ) -> Result<Option<LeagueEntry>, FetcherError> {
         if matches!(config.mode, Mode::Ranked(_)) || matches!(config.image, Image::RankIcon) {
             Ok(Some(
                 self.get_rank(summonner, config.account.server, queue)
