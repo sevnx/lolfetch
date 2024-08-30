@@ -1,26 +1,23 @@
 //! Module that handles the interaction with the various APIs used to gather data.
 
-use account::AccountFetcher;
-use matches::{MatchFetcher, MatchGetter};
-use rank::{RankFetcher, RankRetriever};
+use crate::config::{Config, Image};
+use account::Fetcher as AccountFetcher;
+use anyhow::Result;
+use mastery::Fetcher as MasteryFetcher;
+use matches::Fetcher as MatchesFetcher;
+use rank::Fetcher as RankFetcher;
 use riven::{
-    consts::{Queue, QueueType},
+    consts::QueueType,
     models::{champion_mastery_v4, match_v5},
     RiotApi,
 };
-use static_data::IconGetter;
-
-use crate::{
-    config::{Config, Image, Mode},
-    display::utils::ImageUrlGetter,
-};
+use tooling::static_data::IconGetter;
 
 pub mod account;
 pub mod mastery;
 pub mod matches;
 pub mod rank;
-pub mod region;
-pub mod static_data;
+pub mod tooling;
 
 /// Extension trait to fetch data from the API.
 pub trait Fetcher {
@@ -43,7 +40,6 @@ pub struct Data {
 }
 
 // TODO: Clean up
-use anyhow::Result;
 
 impl Fetcher for RiotApi {
     async fn fetch(&self, config: &Config) -> Result<Data> {
@@ -56,13 +52,17 @@ impl Fetcher for RiotApi {
             .await?;
 
         let matches = self
-        .fetch_recent_matches(&summoner, config.account.server.to_regional(), &config.mode)
+            .fetch_recent_matches(&summoner, config.account.server.to_regional(), &config.mode)
+            .await?;
+
+        let masteries = self
+            .fetch_mastery(&summoner, config.account.server, &config.mode)
             .await?;
 
         // Image URL.
-        let image = match config.image.clone() {
+        let image_url = match config.image.clone() {
             Image::Default => None,
-            Image::RankIcon => Some(ranked.as_ref().unwrap().tier.get_image_url()),
+            Image::RankIcon => Some(ranked.as_ref().unwrap().tier.get_icon_url().await),
             Image::ChampionIcon(champ) => Some(champ.get_icon_url().await),
             Image::SummonerIcon => Some(summoner.get_icon_url().await),
             Image::Custom(url) => Some(url),
@@ -71,8 +71,8 @@ impl Fetcher for RiotApi {
         Ok(Data {
             ranked,
             matches,
-            masteries: None,
-            image_url: image,
+            masteries,
+            image_url,
         })
     }
 }

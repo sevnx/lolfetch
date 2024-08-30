@@ -1,46 +1,51 @@
 //! Rank module
 
-use anyhow::Result;
+use crate::config::{Config, Image, Mode};
 use riven::{
     consts::{Division, PlatformRoute, QueueType, Tier},
     models::{league_v4::LeagueEntry, summoner_v4::Summoner},
     RiotApi,
 };
+use thiserror::Error;
 
-use crate::config::{Config, Image, Mode};
+#[derive(Debug, Error)]
+pub enum RetrieverError {
+    #[error("No rank found in queue {0:?}")]
+    NoRankFound(QueueType),
 
-pub trait RankRetriever {
+    #[error("Failed to fetch league entries for summoner")]
+    FetchError(#[from] riven::RiotApiError),
+}
+
+trait Retriever {
     /// Returns the rank of a summoner.
     async fn get_rank(
         &self,
-        api: &RiotApi,
+        summonner: &Summoner,
         route: PlatformRoute,
         queue: QueueType,
-    ) -> Result<RankedInfo>;
+    ) -> Result<RankedInfo, RetrieverError>;
 }
 
-impl RankRetriever for Summoner {
+impl Retriever for RiotApi {
     async fn get_rank(
         &self,
-        api: &RiotApi,
+        summonner: &Summoner,
         route: PlatformRoute,
         queue: QueueType,
-    ) -> Result<RankedInfo> {
-        let entries = api
+    ) -> Result<RankedInfo, RetrieverError> {
+        let entries = self
             .league_v4()
-            .get_league_entries_for_summoner(route, &self.id)
+            .get_league_entries_for_summoner(route, &summonner.id)
             .await?;
 
         for entry in entries {
             if entry.queue_type == queue {
-                return RankedInfo::from_entry(entry);
+                return RankedInfo::from_entry(entry).ok_or(RetrieverError::NoRankFound(queue));
             }
         }
 
-        Err(anyhow::anyhow!(format!(
-            "No rank found in queue {:?}",
-            queue
-        )))
+        Err(RetrieverError::NoRankFound(queue))
     }
 }
 
@@ -56,12 +61,13 @@ pub struct RankedInfo {
 
 impl RankedInfo {
     /// Tries to create a `RankedInfo` from a `LeagueEntry`.
-    fn from_entry(entry: LeagueEntry) -> Result<Self> {
+    /// Returns `None` if the queue type is not `RANKED_SOLO_5x5` or `RANKED_FLEX_SR`.
+    fn from_entry(entry: LeagueEntry) -> Option<Self> {
         match entry.queue_type {
             QueueType::RANKED_SOLO_5x5 | QueueType::RANKED_FLEX_SR => {}
-            _ => return Err(anyhow::anyhow!("Invalid queue type")),
+            _ => return None,
         }
-        Ok(Self {
+        Some(Self {
             queue: entry.queue_type,
             tier: entry.tier.unwrap_or(Tier::UNRANKED),
             division: entry.rank,
@@ -72,27 +78,34 @@ impl RankedInfo {
     }
 }
 
-pub trait RankFetcher {
+#[derive(Error, Debug)]
+pub enum FetcherError {
+    #[error("{0}")]
+    FetchError(#[from] RetrieverError),
+}
+
+pub trait Fetcher {
     /// Fetches the rank of a summoner.
     async fn fetch_rank(
         &self,
         summonner: &Summoner,
         queue: QueueType,
         config: &Config,
-    ) -> Result<Option<RankedInfo>>;
+    ) -> Result<Option<RankedInfo>, FetcherError>;
 }
 
-impl RankFetcher for RiotApi {
+impl Fetcher for RiotApi {
     async fn fetch_rank(
         &self,
         summonner: &Summoner,
         queue: QueueType,
         config: &Config,
-    ) -> Result<Option<RankedInfo>> {
+    ) -> Result<Option<RankedInfo>, FetcherError> {
         if matches!(config.mode, Mode::Ranked(_)) || matches!(config.image, Image::RankIcon) {
-            let route = config.account.server.into();
-            let rank = summonner.get_rank(self, route, queue).await?;
-            Ok(Some(rank))
+            Ok(Some(
+                self.get_rank(summonner, config.account.server, queue)
+                    .await?,
+            ))
         } else {
             Ok(None)
         }
