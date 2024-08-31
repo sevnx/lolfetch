@@ -57,7 +57,7 @@ impl DisplayableSection for MatchHistory {
             if let Some(kda) = match_info.kda.get_kda() {
                 match_body.push_unformatted_str(&format!("{:.2} KDA", kda));
             } else {
-                match_body.push_unformatted_str("Perfect");
+                match_body.push_unformatted_str("PERFECT");
             }
 
             #[allow(clippy::cast_precision_loss)]
