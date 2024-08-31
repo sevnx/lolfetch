@@ -158,7 +158,7 @@ fn parse_number_of_parsed_games(s: &str) -> Result<i32, String> {
     /// We limit the max number of matches to 75, as Riot API has a rate limit of 100 requests / 2 min
     const MAX_MATCHES: i32 = 75;
     match s.parse() {
-        Ok(n) if n <= 10 && n > 0 => Ok(n),
+        Ok(n) if n <= MAX_MATCHES && n > 0 => Ok(n),
         Ok(_) => Err(format!(
             "Number of games must be between 1 and {MAX_MATCHES}"
         )),

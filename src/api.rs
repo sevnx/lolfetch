@@ -8,7 +8,7 @@ use matches::Fetcher as MatchesFetcher;
 use rank::Fetcher as RankFetcher;
 use riven::{
     consts::QueueType,
-    models::{champion_mastery_v4, league_v4, match_v5},
+    models::{champion_mastery_v4, league_v4, match_v5, summoner_v4},
     RiotApi,
 };
 use tooling::static_data::IconGetter;
@@ -27,8 +27,10 @@ pub trait Fetcher {
 /// Data struct to holds the various data fetched from the API.
 /// Each field is linked to specific data / module.
 #[non_exhaustive]
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Data {
+    /// Summoner information.
+    pub summoner: summoner_v4::Summoner,
     /// Ranked information.
     pub ranked: Option<league_v4::LeagueEntry>,
     /// Matches.
@@ -98,6 +100,7 @@ impl Fetcher for RiotApi {
         };
 
         Ok(Data {
+            summoner,
             ranked,
             matches,
             masteries,

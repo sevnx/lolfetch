@@ -1,11 +1,18 @@
 //! Provides information about a summoner.
 
-use super::SectionInfoProvider;
-use crate::{api::account::RiotId, display::utils::RankColorGetter, models::ranked::RankedInfo};
+use crate::{
+    api::account::RiotId,
+    display::{
+        utils::{colors::RankColorGetter, generate_loading_bar},
+        DisplayableSection,
+    },
+    models::ranked::RankedInfo,
+};
 use lolfetch_color::ColoredString;
-use termcolor::Color;
+use riven::models::league_v4::LeagueEntry;
 
-pub struct Info {
+/// Summoner information.
+pub struct Summoner {
     pub riot_id: RiotId,
 
     /// Rnak information of the summoner.
@@ -14,8 +21,10 @@ pub struct Info {
     pub ranked: Option<RankedInfo>,
 }
 
-impl Info {
-    pub fn new(riot_id: &RiotId, ranked: Option<RankedInfo>) -> Self {
+impl Summoner {
+    pub fn new(riot_id: &RiotId, ranked: Option<LeagueEntry>) -> Self {
+        let ranked = ranked.and_then(RankedInfo::from_entry);
+
         Self {
             riot_id: riot_id.clone(),
             // Filter out unranked tiers (since it is useless to display them).
@@ -24,111 +33,54 @@ impl Info {
     }
 }
 
-impl SectionInfoProvider for Info {
+impl DisplayableSection for Summoner {
     fn header(&self) -> Option<String> {
         None
     }
 
     fn body(&self) -> Vec<ColoredString> {
-        let mut vec = Vec::new();
+        let mut body = Vec::new();
 
-        // Name
-        vec.push(ColoredString::from_str(
-            &format!("Name: {}", self.riot_id),
-            None,
-            None,
-        ));
+        // Summoner name
+        body.push(ColoredString::from_unformatted_str(&format!(
+            "Summoner: {}",
+            self.riot_id
+        )));
 
-        // Early return if the summoner is unranked.
-        let ranked_info = match &self.ranked {
-            Some(ranked) => ranked,
-            None => return vec,
-        };
-
-        // Rank
-        let mut rank_string = ColoredString::new();
-
-        let rank = ranked_info.tier;
-        let rank_color = rank.get_rank_color();
-        rank_string.push_str("Rank: ", None, None);
-        rank_string.push_str(&format!("{rank}"), rank_color, None);
-
-        match ranked_info.division {
-            Some(division) if !rank.is_apex() => {
-                rank_string.push_str(" ", None, None);
-                rank_string.push_str(&format!("{division}"), rank_color, None);
+        if let Some(ranked) = &self.ranked {
+            // Rank / LP
+            let mut ranked_string = ColoredString::new();
+            let rank_color = ranked.tier.get_rank_color().unwrap();
+            ranked_string.push_unformatted_str("Rank: ");
+            ranked_string.push_str(&format!("{}", ranked.tier), Some(rank_color), None);
+            match ranked.division {
+                Some(division) if !ranked.tier.is_apex() => {
+                    ranked_string.push_str(&format!(" {division}"), Some(rank_color), None);
+                }
+                _ => {}
             }
-            _ => {}
+            ranked_string.push_str(&format!(" - {} LP", ranked.lp), Some(rank_color), None);
+
+            // Winrate bar
+            let mut winrate_string = ColoredString::from_unformatted_str(&" ".repeat(6));
+            const WINRATE_BAR_WIDTH: i32 = 30;
+            winrate_string.join(&generate_loading_bar(
+                ranked.wins,
+                ranked.losses,
+                WINRATE_BAR_WIDTH,
+                rank_color,
+            ));
+
+            winrate_string.push_str(
+                &format!(" {:.1}%", ranked.get_winrate().unwrap(),),
+                Some(rank_color),
+                None,
+            );
+            winrate_string.push_unformatted_str(&format!(" ({}W/{}L)", ranked.wins, ranked.losses));
+
+            body.push(ranked_string);
         }
 
-        // LP
-        rank_string.push_str(" - ", None, None);
-        rank_string.push_str(&format!("{} LP", ranked_info.lp), rank_color, None);
-        vec.push(rank_string);
-
-        // Winrate
-        let mut winrate_string = ColoredString::from_str(&" ".repeat(6), None, None);
-        let winrate_bar =
-            generate_winrate_bar(ranked_info.wins, ranked_info.losses, 30, rank_color);
-        winrate_string.join(&winrate_bar);
-
-        winrate_string.push_str(
-            &format!(
-                " {:.1}%",
-                get_winrate(ranked_info.wins, ranked_info.losses).unwrap() * 100.0
-            ),
-            rank_color,
-            None,
-        );
-
-        winrate_string.push_str(
-            &format!(
-                " ({wins}W/{losses}L)",
-                wins = ranked_info.wins,
-                losses = ranked_info.losses
-            ),
-            None,
-            None,
-        );
-        vec.push(winrate_string);
-
-        vec
+        body
     }
-}
-
-fn get_winrate(wins: i32, losses: i32) -> Option<f64> {
-    let total = wins + losses;
-    if total == 0 {
-        None
-    } else {
-        Some(f64::from(wins) / f64::from(total))
-    }
-}
-
-pub fn generate_winrate_bar(
-    wins: i32,
-    losses: i32,
-    width: i32,
-    win_color: Option<Color>,
-) -> ColoredString {
-    let mut winrate_bar = ColoredString::new();
-    let total = wins + losses;
-    let winrate = if total == 0 {
-        0.0
-    } else {
-        f64::from(wins) / f64::from(total)
-    };
-    let winrate_width = (winrate * f64::from(width)).round() as i32;
-    for i in 0..width {
-        winrate_bar.push_str(
-            " ",
-            None,
-            if i < winrate_width {
-                win_color
-            } else {
-                Some(Color::White)
-            },
-        );
-    }
-    winrate_bar
 }

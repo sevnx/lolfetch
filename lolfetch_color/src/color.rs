@@ -53,6 +53,10 @@ impl ColoredString {
         Self { vec }
     }
 
+    pub fn from_unformatted_str(s: &str) -> Self {
+        Self::from_str(s, None, None)
+    }
+
     pub fn push(&mut self, item: ColoredChar) {
         self.vec.push(item);
     }
@@ -61,6 +65,10 @@ impl ColoredString {
         for c in item.chars() {
             self.push(ColoredChar::new(c, color, background));
         }
+    }
+
+    pub fn push_unformatted_str(&mut self, item: &str) {
+        self.push_str(item, None, None);
     }
 
     pub fn join(&mut self, other: &ColoredString) {

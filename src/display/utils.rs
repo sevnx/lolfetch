@@ -1,26 +1,34 @@
 //! This module contains utilities regarding the display of the application.
 
-use riven::consts::Tier;
+use lolfetch_color::ColoredString;
+use termcolor::Color;
 
-pub trait RankColorGetter {
-    /// Returns the color associated with the league rank.
-    fn get_rank_color(&self) -> Option<termcolor::Color>;
-}
+pub mod colors;
 
-impl RankColorGetter for Tier {
-    fn get_rank_color(&self) -> Option<termcolor::Color> {
-        match self {
-            Self::IRON => Some(termcolor::Color::Ansi256(102)), // Dark gray
-            Self::BRONZE => Some(termcolor::Color::Ansi256(130)), // Bronze
-            Self::SILVER => Some(termcolor::Color::Ansi256(145)), // Silver
-            Self::GOLD => Some(termcolor::Color::Ansi256(178)), // Gold
-            Self::PLATINUM => Some(termcolor::Color::Ansi256(80)), // Teal
-            Self::EMERALD => Some(termcolor::Color::Ansi256(35)), // Emerald green
-            Self::DIAMOND => Some(termcolor::Color::Ansi256(69)), // Light blue
-            Self::MASTER => Some(termcolor::Color::Ansi256(99)), // Purple
-            Self::GRANDMASTER => Some(termcolor::Color::Ansi256(160)), // Red
-            Self::CHALLENGER => Some(termcolor::Color::Ansi256(220)), // Light gold
-            Self::UNRANKED => None,
-        }
+/// Generate a two-part loading bar.
+pub fn generate_loading_bar(
+    filled_part: i32,
+    unfilled_part: i32,
+    width: i32,
+    fill_color: termcolor::Color,
+) -> ColoredString {
+    let total = filled_part + unfilled_part;
+
+    let mut bar = ColoredString::new();
+
+    let percentage_filled = ((filled_part as f32 / total as f32) * width as f32).round() as i32;
+
+    for i in 0..width {
+        bar.push_str(
+            " ",
+            None,
+            if i < percentage_filled {
+                Some(fill_color)
+            } else {
+                Some(Color::White)
+            },
+        );
     }
+
+    bar
 }

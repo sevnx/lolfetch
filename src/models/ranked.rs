@@ -16,7 +16,7 @@ pub struct RankedInfo {
 impl RankedInfo {
     /// Tries to create a `RankedInfo` from a `LeagueEntry`.
     /// Returns `None` if the queue type is not `RANKED_SOLO_5x5` or `RANKED_FLEX_SR`.
-    fn from_entry(entry: LeagueEntry) -> Option<Self> {
+    pub fn from_entry(entry: LeagueEntry) -> Option<Self> {
         match entry.queue_type {
             QueueType::RANKED_SOLO_5x5 | QueueType::RANKED_FLEX_SR => {}
             _ => return None,
@@ -29,5 +29,13 @@ impl RankedInfo {
             wins: entry.wins,
             losses: entry.losses,
         })
+    }
+
+    pub fn get_winrate(&self) -> Option<f32> {
+        let total = self.wins + self.losses;
+        if total == 0 {
+            return None;
+        }
+        Some(self.wins as f32 / total as f32)
     }
 }

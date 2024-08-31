@@ -1,17 +1,57 @@
-use crate::data::Sections;
+use crate::data::{
+    champion_stats::RecentChampionInfo, mastery::Mastery, match_history::MatchHistory,
+    summoner::Summoner, ApplicationData,
+};
 use anyhow::Result;
-use lolfetch_ascii::ColoredArt;
+use enum_dispatch::enum_dispatch;
 use lolfetch_color::ColoredString;
 use std::io::Write;
 use termcolor::{Buffer, BufferWriter, ColorChoice};
 
 pub mod utils;
 
-const CENTER_PAD_LENGTH: usize = 5;
+pub const CENTER_PAD_LENGTH: usize = 5;
+pub const IMAGE_WIDTH: u32 = 50;
+pub const IMAGE_HEIGHT: u32 = 25;
 
-pub struct Layout {
-    image: ColoredArt,
-    info: Vec<Sections>,
+/// Trait that defines a displayable section.
+#[enum_dispatch]
+pub trait DisplayableSection {
+    /// Returns the header of the section, not all sections have a header.
+    fn header(&self) -> Option<String>;
+
+    /// Returns the body of the section.
+    fn body(&self) -> Vec<ColoredString>;
+}
+
+/// Enum that defines the different kinds of displayable sections.
+#[enum_dispatch(DisplayableSection)]
+pub enum DisplayableSectionKind {
+    Summoner,
+    MatchHistory,
+    RecentChampionInfo,
+    Mastery,
+}
+
+impl DisplayableSectionKind {
+    pub fn to_colored_string_vec(&self) -> Vec<ColoredString> {
+        let mut vec = Vec::new();
+
+        if let Some(header) = self.header() {
+            vec.push(ColoredString::from_str(&header, None, None));
+            vec.push(ColoredString::from_str(
+                "-".repeat(CENTER_PAD_LENGTH).as_str(),
+                None,
+                None,
+            ));
+        }
+
+        self.body().iter().for_each(|body| {
+            vec.push(body.clone());
+        });
+
+        vec
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -34,21 +74,24 @@ impl ColoredStringDisplayer for ColoredString {
     }
 }
 
+pub struct Layout {
+    processed: ApplicationData,
+}
+
 impl Layout {
-    pub fn new(logo: ColoredArt, info: Vec<Sections>) -> Self {
-        Self { image: logo, info }
+    pub fn new(processed: ApplicationData) -> Self {
+        Self { processed }
     }
 
     pub fn display(&self) -> Result<()> {
-        let mut logo_lines = self.image.iter();
+        let mut logo_lines = self.processed.image.iter();
         let mut info_lines = Vec::new();
 
-        for (i, section) in self.info.iter().enumerate() {
+        for (i, section) in self.processed.sections.iter().enumerate() {
             if i != 0 {
                 info_lines.push(ColoredString::from_str("", None, None));
             }
-            // let section_lines = section.to_colored_string_vec(CENTER_PAD_LENGTH);
-            // info_lines.extend(section_lines);
+            info_lines.extend(section.to_colored_string_vec());
         }
 
         let mut info_lines = info_lines.iter();
@@ -96,7 +139,12 @@ impl Layout {
                 logo.display(&mut buffer)?;
             }
             Line::Info(info) => {
-                let logo_width = self.image.first().map(|line| line.len()).unwrap_or(0);
+                let logo_width = self
+                    .processed
+                    .image
+                    .first()
+                    .map(|line| line.len())
+                    .unwrap_or(0);
                 buffer.write(" ".repeat(logo_width + CENTER_PAD_LENGTH).as_bytes())?;
                 info.display(&mut buffer)?;
             }

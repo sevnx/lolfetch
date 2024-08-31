@@ -1,25 +1,27 @@
 use lolfetch_color::ColoredString;
 use riven::models::champion_mastery_v4::ChampionMastery;
 
-use super::SectionInfoProvider;
+use crate::display::DisplayableSection;
 
-pub struct MasteryInfo {
+pub struct Mastery {
     masteries: Vec<ChampionMastery>,
 }
 
-impl MasteryInfo {
-    pub fn new(masteries: Vec<ChampionMastery>) -> Self {
-        Self { masteries }
+impl Mastery {
+    pub fn new(masteries: Vec<ChampionMastery>, max_champs: i32) -> Self {
+        Self {
+            masteries: masteries.into_iter().take(max_champs as usize).collect(),
+        }
     }
 }
 
-impl SectionInfoProvider for MasteryInfo {
+impl DisplayableSection for Mastery {
     fn header(&self) -> Option<String> {
-        Some("Champion Masteries".to_string())
+        Some("Champion Mastery".to_string())
     }
 
     fn body(&self) -> Vec<ColoredString> {
-        let mut vec = Vec::new();
+        let mut body = Vec::new();
         for (i, mastery) in self.masteries.iter().enumerate() {
             let mastery_str = format!(
                 "{}. {:<12} - Level {} - {} points",
@@ -28,8 +30,8 @@ impl SectionInfoProvider for MasteryInfo {
                 mastery.champion_level,
                 mastery.champion_points
             );
-            vec.push(ColoredString::from_str(&mastery_str, None, None));
+            body.push(ColoredString::from_unformatted_str(&mastery_str));
         }
-        vec
+        body
     }
 }
