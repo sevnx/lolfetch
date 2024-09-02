@@ -44,7 +44,7 @@ impl IconGetter for Champion {
         format!(
             "http://ddragon.leagueoflegends.com/cdn/{}/img/champion/{}.png",
             get_latest_patch().await,
-            self
+            self.identifier().unwrap()
         )
     }
 }

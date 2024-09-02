@@ -115,15 +115,11 @@ impl Layout {
                 }
             }
         } else {
-            let diff = (info_lines.len() - logo_lines.len()) / 2;
             for (i, info_line) in info_lines.enumerate() {
-                if i < diff {
-                    buffer.print(&self.format_line(&Line::Info(info_line))?)?;
-                } else {
-                    let logo_line = logo_lines
-                        .next()
-                        .ok_or_else(|| anyhow::anyhow!("Logo lines ran out before info lines"))?;
+                if let Some(logo_line) = logo_lines.next() {
                     buffer.print(&self.format_line(&Line::Both(logo_line, info_line))?)?;
+                } else {
+                    buffer.print(&self.format_line(&Line::Info(info_line))?)?;
                 }
             }
         }
@@ -145,17 +141,17 @@ impl Layout {
                     .first()
                     .map(|line| line.len())
                     .unwrap_or(0);
-                buffer.write(" ".repeat(logo_width + CENTER_PAD_LENGTH).as_bytes())?;
+                buffer.write_all(" ".repeat(logo_width + CENTER_PAD_LENGTH).as_bytes())?;
                 info.display(&mut buffer)?;
             }
             Line::Both(logo, info) => {
                 logo.display(&mut buffer)?;
-                buffer.write(" ".repeat(CENTER_PAD_LENGTH).as_bytes())?;
+                buffer.write_all(" ".repeat(CENTER_PAD_LENGTH).as_bytes())?;
                 info.display(&mut buffer)?;
             }
         }
 
-        buffer.write("\n".as_bytes())?;
+        buffer.write_all("\n".as_bytes())?;
 
         Ok(buffer)
     }

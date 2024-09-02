@@ -46,3 +46,11 @@ impl GameStats {
         }
     }
 }
+
+impl From<&MatchPlayerInfo> for GameStats {
+    fn from(match_info: &MatchPlayerInfo) -> Self {
+        let mut stats = GameStats::new();
+        stats.add_game(match_info);
+        stats
+    }
+}

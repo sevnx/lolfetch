@@ -1,4 +1,5 @@
 use crate::display::DisplayableSection;
+use crate::models::champion_stats::GameStats;
 use crate::models::matches::{GameResult, MatchPlayerInfo, MatchPlayerInfoError};
 use lolfetch_color::ColoredString;
 use riven::models::match_v5::Match;
@@ -54,17 +55,15 @@ impl DisplayableSection for MatchHistory {
 
             match_body.push_unformatted_str(&format!(" - {:8} - ", match_info.kda.to_string()));
 
-            if let Some(kda) = match_info.kda.get_kda() {
+            let game_stats = GameStats::from(match_info);
+
+            if let Some(kda) = game_stats.kda() {
                 match_body.push_unformatted_str(&format!("{:.2} KDA", kda));
             } else {
                 match_body.push_unformatted_str("PERFECT");
             }
 
-            #[allow(clippy::cast_precision_loss)]
-            let cspm =
-                f64::from(match_info.minions_killed) / (f64::from(match_info.time_played) / 60.0);
-
-            match_body.push_unformatted_str(&format!(" - {cspm:.1} CS/M"));
+            match_body.push_unformatted_str(&format!(" - {:.1} CS/M", game_stats.cspm()));
 
             body.push(match_body);
         }

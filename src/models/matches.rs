@@ -26,6 +26,21 @@ pub enum MatchPlayerInfoError {
     ChampionNotFound,
 }
 
+pub struct MatchPlayerInfo {
+    /// Champion played in the match.
+    pub champion: Champion,
+    /// KDA
+    pub kda: Kda,
+    /// Minions killed in the match.
+    pub minions_killed: i32,
+    /// Time played in the match.
+    pub time_played: i32,
+    /// Whether the player won the match.
+    pub game_result: GameResult,
+    /// Position in the team.
+    pub team_position: TeamPosition,
+}
+
 impl MatchPlayerInfo {
     pub fn from_match(
         match_data: &match_v5::Match,
@@ -44,7 +59,9 @@ impl MatchPlayerInfo {
                 .champion()
                 .map_err(|_| MatchPlayerInfoError::ChampionNotFound)?,
             kda: Kda(participant.kills, participant.deaths, participant.assists),
-            minions_killed: participant.total_minions_killed,
+            minions_killed: participant.total_minions_killed
+                + participant.total_ally_jungle_minions_killed.unwrap_or(0)
+                + participant.total_enemy_jungle_minions_killed.unwrap_or(0),
             time_played: max_time,
             game_result,
             team_position: participant.team_position.clone().try_into()?,
@@ -98,21 +115,6 @@ impl fmt::Display for TeamPosition {
 pub enum GameResult {
     Win,
     Loss,
-}
-
-pub struct MatchPlayerInfo {
-    /// Champion played in the match.
-    pub champion: Champion,
-    /// KDA
-    pub kda: Kda,
-    /// Minions killed in the match.
-    pub minions_killed: i32,
-    /// Time played in the match.
-    pub time_played: i32,
-    /// Whether the player won the match.
-    pub game_result: GameResult,
-    /// Position in the team.
-    pub team_position: TeamPosition,
 }
 
 #[derive(Debug, Error)]

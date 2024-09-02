@@ -57,10 +57,17 @@ impl Retriever for RiotApi {
                 .get_match(route, &match_id)
                 .await?
                 .ok_or_else(|| RetrieverError::MatchDataError)?;
-            matches.push(match_data);
+            if !is_remake(&match_data) {
+                matches.push(match_data);
+            }
         }
         Ok(matches)
     }
+}
+
+fn is_remake(match_data: &Match) -> bool {
+    const MINUTES_UNTIL_REMAKE: i64 = 3;
+    match_data.info.game_duration < MINUTES_UNTIL_REMAKE * 60
 }
 
 #[derive(Debug, Clone, Copy)]

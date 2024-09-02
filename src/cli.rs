@@ -155,8 +155,8 @@ fn parse_champion(champion_name: &str) -> Result<Champion, Error> {
 
 /// Parses the number of games to fetch for ranked statistics
 fn parse_number_of_parsed_games(s: &str) -> Result<i32, String> {
-    /// We limit the max number of matches to 75, as Riot API has a rate limit of 100 requests / 2 min
-    const MAX_MATCHES: i32 = 75;
+    /// We limit the max number of fetched game, as Riot API has a rate limit of 100 requests / 2 min
+    const MAX_MATCHES: i32 = 90;
     match s.parse() {
         Ok(n) if n <= MAX_MATCHES && n > 0 => Ok(n),
         Ok(_) => Err(format!(
