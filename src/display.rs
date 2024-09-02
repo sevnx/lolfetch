@@ -54,13 +54,6 @@ impl DisplayableSectionKind {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-enum Line<'a> {
-    Logo(&'a ColoredString),
-    Info(&'a ColoredString),
-    Both(&'a ColoredString, &'a ColoredString),
-}
-
 trait ColoredStringDisplayer {
     fn display(&self, buffer: &mut Buffer) -> Result<()>;
 }
@@ -102,53 +95,35 @@ impl Layout {
             let diff = (logo_lines.len() - info_lines.len()) / 2;
             for (i, logo_line) in logo_lines.enumerate() {
                 if i < diff {
-                    buffer.print(&self.format_line(&Line::Logo(logo_line))?)?;
+                    buffer.print(&self.format_line(Some(logo_line), None)?)?;
                 } else {
-                    match info_lines.next() {
-                        Some(info_line) => {
-                            buffer.print(&self.format_line(&Line::Both(logo_line, info_line))?)?;
-                        }
-                        None => {
-                            buffer.print(&self.format_line(&Line::Logo(logo_line))?)?;
-                        }
-                    }
+                    buffer.print(&self.format_line(Some(logo_line), info_lines.next())?)?;
                 }
             }
         } else {
-            for (i, info_line) in info_lines.enumerate() {
-                if let Some(logo_line) = logo_lines.next() {
-                    buffer.print(&self.format_line(&Line::Both(logo_line, info_line))?)?;
-                } else {
-                    buffer.print(&self.format_line(&Line::Info(info_line))?)?;
-                }
+            for info_line in info_lines {
+                buffer.print(&self.format_line(logo_lines.next(), Some(info_line))?)?;
             }
         }
 
         Ok(())
     }
 
-    fn format_line(&self, line: &Line) -> Result<Buffer> {
+    fn format_line(
+        &self,
+        logo_line: Option<&ColoredString>,
+        info_line: Option<&ColoredString>,
+    ) -> Result<Buffer> {
         let mut buffer = BufferWriter::stdout(ColorChoice::Always).buffer();
 
-        match line {
-            Line::Logo(logo) => {
-                logo.display(&mut buffer)?;
-            }
-            Line::Info(info) => {
-                let logo_width = self
-                    .processed
-                    .image
-                    .first()
-                    .map(|line| line.len())
-                    .unwrap_or(0);
-                buffer.write_all(" ".repeat(logo_width + CENTER_PAD_LENGTH).as_bytes())?;
-                info.display(&mut buffer)?;
-            }
-            Line::Both(logo, info) => {
-                logo.display(&mut buffer)?;
-                buffer.write_all(" ".repeat(CENTER_PAD_LENGTH).as_bytes())?;
-                info.display(&mut buffer)?;
-            }
+        match logo_line {
+            Some(logo) => logo.display(&mut buffer)?,
+            None => buffer.write_all(" ".repeat(IMAGE_WIDTH as usize).as_bytes())?,
+        }
+
+        if let Some(info) = info_line {
+            buffer.write_all(" ".repeat(CENTER_PAD_LENGTH).as_bytes())?;
+            info.display(&mut buffer)?;
         }
 
         buffer.write_all("\n".as_bytes())?;
