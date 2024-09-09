@@ -2,7 +2,9 @@ use anyhow::Result;
 use clap::Parser;
 use riven::{RiotApi, RiotApiConfig};
 
-use crate::{api::Fetcher, cli::Cli, config::Config, data::ApplicationData, display::Layout};
+use crate::{
+    api::Fetcher, cache, cli::Cli, config::Config, data::ApplicationData, display::Layout,
+};
 
 pub struct App {}
 
@@ -15,7 +17,6 @@ impl App {
         let api = RiotApi::new(RiotApiConfig::with_key(&config.api_key));
         let data = api.fetch(&config).await?;
         let processed = ApplicationData::process(data, &config).await;
-
         Layout::new(processed).display()
     }
 }

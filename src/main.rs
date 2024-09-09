@@ -6,6 +6,7 @@ use app::App;
 // Crate modules
 mod api;
 mod app;
+mod cache;
 mod cli;
 mod config;
 mod data;

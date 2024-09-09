@@ -1,6 +1,9 @@
 //! League of Legends match data.
 
-use crate::config::{self, Mode};
+use crate::{
+    config::{self, Mode},
+    models::matches::MatchInfo,
+};
 use riven::{
     consts::{Queue, RegionalRoute},
     models::{match_v5::Match, summoner_v4::Summoner},
@@ -15,6 +18,9 @@ pub enum RetrieverError {
 
     #[error("Failed to get match data")]
     MatchDataError,
+
+    #[error("Failed to get match timeline")]
+    MatchTimelineError,
 }
 
 trait Retriever {
@@ -25,7 +31,7 @@ trait Retriever {
         route: RegionalRoute,
         count: i32,
         queue: Option<Queue>,
-    ) -> Result<Vec<Match>, RetrieverError>;
+    ) -> Result<Vec<MatchInfo>, RetrieverError>;
 }
 
 impl Retriever for RiotApi {
@@ -35,7 +41,7 @@ impl Retriever for RiotApi {
         route: RegionalRoute,
         count: i32,
         queue: Option<Queue>,
-    ) -> Result<Vec<Match>, RetrieverError> {
+    ) -> Result<Vec<MatchInfo>, RetrieverError> {
         let match_list = self
             .match_v5()
             .get_match_ids_by_puuid(
@@ -57,8 +63,18 @@ impl Retriever for RiotApi {
                 .get_match(route, &match_id)
                 .await?
                 .ok_or_else(|| RetrieverError::MatchDataError)?;
+
+            let timeline = self
+                .match_v5()
+                .get_timeline(route, &match_id)
+                .await?
+                .ok_or_else(|| RetrieverError::MatchDataError)?;
+
             if !is_remake(&match_data) {
-                matches.push(match_data);
+                matches.push(MatchInfo {
+                    match_info: match_data.info,
+                    timeline_info: Some(timeline.info),
+                });
             }
         }
         Ok(matches)
@@ -82,6 +98,10 @@ impl Mode {
             Mode::Ranked(ref ranked) => Some(MatchCriteria {
                 count: ranked.games,
                 queue: Some(Queue::SUMMONERS_RIFT_5V5_RANKED_SOLO),
+            }),
+            Mode::Lolfetch(ref lolfetch) => Some(MatchCriteria {
+                count: lolfetch.games,
+                queue: None,
             }),
             Mode::Mastery(ref mastery) => Some(MatchCriteria {
                 count: mastery.games,
@@ -112,7 +132,7 @@ pub trait Fetcher {
         summoner: &Summoner,
         route: RegionalRoute,
         config: &config::Mode,
-    ) -> Result<Option<Vec<Match>>, FetcherError>;
+    ) -> Result<Option<Vec<MatchInfo>>, FetcherError>;
 }
 
 impl Fetcher for RiotApi {
@@ -121,7 +141,7 @@ impl Fetcher for RiotApi {
         summoner: &Summoner,
         route: RegionalRoute,
         config: &config::Mode,
-    ) -> Result<Option<Vec<Match>>, FetcherError> {
+    ) -> Result<Option<Vec<MatchInfo>>, FetcherError> {
         let criteria = config
             .to_match_criteria()
             .ok_or(FetcherError::InvalidMode)?;

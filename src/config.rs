@@ -108,8 +108,18 @@ pub enum Mode {
     /// Displays information about recent matches
     RecentMatches(RecentMatches),
 
+    /// Displays information in a `neofetch`-like format
+    Lolfetch(Lolfetch),
+
     /// Displays custom information
     Custom(Custom),
+}
+
+/// Configuration of the lolfetch mode (similar to `neofetch` dispalay type)
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Lolfetch {
+    /// Number of games to fetch
+    pub games: i32,
 }
 
 /// Configuration for the display of ranked information

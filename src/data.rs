@@ -4,6 +4,7 @@ use champion_stats::RecentChampionInfo;
 use lolfetch_ascii::ColoredArt;
 use mastery::Mastery;
 use match_history::MatchHistory;
+use riven::models::match_v5;
 use summoner::Summoner;
 
 use crate::{
@@ -25,12 +26,18 @@ pub struct ApplicationData {
 impl ApplicationData {
     pub async fn process(data: ApiData, config: &Config) -> Self {
         let mut sections = Vec::new();
+
         match &config.mode {
             Mode::Ranked(ranked) => {
                 // Name + Ranked champion stats + Recent Matches
                 let ranked_summoner = Summoner::new(&config.account.riot_id, data.ranked);
 
-                let matches = data.matches.unwrap();
+                let matches: Vec<match_v5::Info> = data
+                    .matches
+                    .unwrap()
+                    .iter()
+                    .map(|m| m.1.match_info)
+                    .collect();
 
                 let champions =
                     RecentChampionInfo::new(&matches, &data.summoner, ranked.top_champions)
@@ -64,7 +71,7 @@ impl ApplicationData {
                 sections.push(DisplayableSectionKind::Summoner(ranked_summoner));
                 sections.push(DisplayableSectionKind::MatchHistory(match_history));
             }
-            Mode::Custom(_) => {}
+            _ => {}
         }
 
         Self {

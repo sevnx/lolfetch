@@ -5,8 +5,18 @@ use riven::{
         summoner_v4::{self, Summoner},
     },
 };
-use std::fmt;
+use std::{collections::HashMap, fmt};
 use thiserror::Error;
+
+pub type MatchId = i64;
+pub type MatchMap = HashMap<MatchId, MatchInfo>;
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+/// Match information.
+pub struct MatchInfo {
+    pub match_info: match_v5::Info,
+    pub timeline_info: Option<match_v5::InfoTimeLine>,
+}
 
 #[derive(Debug, Error)]
 pub enum MatchPlayerInfoError {

@@ -1,6 +1,10 @@
 //! Module that handles the interaction with the various APIs used to gather data.
 
-use crate::config::{Config, Image, Mode};
+use crate::{
+    cache::{self, Cache},
+    config::{Config, Image, Mode},
+    models::matches::{MatchInfo, MatchMap},
+};
 use account::Fetcher as AccountFetcher;
 use anyhow::Result;
 use mastery::Fetcher as MasteryFetcher;
@@ -34,7 +38,7 @@ pub struct Data {
     /// Ranked information.
     pub ranked: Option<league_v4::LeagueEntry>,
     /// Matches.
-    pub matches: Option<Vec<match_v5::Match>>,
+    pub matches: Option<MatchMap>,
     /// Champion masteries.
     pub masteries: Option<Vec<champion_mastery_v4::ChampionMastery>>,
     /// Image URL.
@@ -47,6 +51,9 @@ impl Fetcher for RiotApi {
     async fn fetch(&self, config: &Config) -> Result<Data> {
         // Construct commonly used data structs for fetching data.
         let summoner = self.fetch_summoner(&config.account).await?;
+
+        // Get cached data
+        let mut cache = Cache::load_cache(&summoner, config.account.server)?;
 
         // Ranked information.
         let ranked = self
@@ -64,7 +71,9 @@ impl Fetcher for RiotApi {
         // TODO: CLEAN THIS UP
         let image_url = match config.image.clone() {
             Image::Default => match config.mode {
-                Mode::Ranked(_) => ranked.as_ref().unwrap().tier.unwrap().get_icon_url().await,
+                Mode::Ranked(_) | Mode::Lolfetch(_) => {
+                    ranked.as_ref().unwrap().tier.unwrap().get_icon_url().await
+                }
                 Mode::Mastery(_) => {
                     masteries
                         .as_ref()
@@ -81,7 +90,7 @@ impl Fetcher for RiotApi {
                         .unwrap()
                         .first()
                         .unwrap()
-                        .info
+                        .match_info
                         .participants
                         .iter()
                         .find(|p| p.puuid == summoner.puuid)
@@ -99,10 +108,18 @@ impl Fetcher for RiotApi {
             Image::Custom(url) => url,
         };
 
+        matches.into_iter().map(|matches| {
+            matches.into_iter().map(|match_info| {
+                cache.insert(match_info.match_info.game_id, match_info);
+            });
+        });
+
+        let matches = cache.save()?;
+
         Ok(Data {
             summoner,
             ranked,
-            matches,
+            matches: Some(matches),
             masteries,
             image_url,
         })
