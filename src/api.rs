@@ -38,7 +38,7 @@ pub struct Data {
     /// Ranked information.
     pub ranked: Option<league_v4::LeagueEntry>,
     /// Matches.
-    pub matches: Option<MatchMap>,
+    pub matches: Option<Vec<MatchInfo>>,
     /// Champion masteries.
     pub masteries: Option<Vec<champion_mastery_v4::ChampionMastery>>,
     /// Image URL.
@@ -53,7 +53,7 @@ impl Fetcher for RiotApi {
         let summoner = self.fetch_summoner(&config.account).await?;
 
         // Get cached data
-        let mut cache = Cache::load_cache(&summoner, config.account.server)?;
+        let mut cache = Cache::load_cache(summoner.clone(), config.account.server)?;
 
         // Ranked information.
         let ranked = self
@@ -61,7 +61,12 @@ impl Fetcher for RiotApi {
             .await?;
 
         let matches = self
-            .fetch_recent_matches(&summoner, config.account.server.to_regional(), &config.mode)
+            .fetch_recent_matches(
+                &summoner,
+                config.account.server.to_regional(),
+                &config.mode,
+                &cache,
+            )
             .await?;
 
         let masteries = self
@@ -108,11 +113,9 @@ impl Fetcher for RiotApi {
             Image::Custom(url) => url,
         };
 
-        matches.into_iter().map(|matches| {
-            matches.into_iter().map(|match_info| {
-                cache.insert(match_info.match_info.game_id, match_info);
-            });
-        });
+        for info in matches.unwrap() {
+            cache.insert(info.id.clone(), info);
+        }
 
         let matches = cache.save()?;
 

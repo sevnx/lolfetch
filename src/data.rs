@@ -35,8 +35,8 @@ impl ApplicationData {
                 let matches: Vec<match_v5::Info> = data
                     .matches
                     .unwrap()
-                    .iter()
-                    .map(|m| m.1.match_info)
+                    .into_iter()
+                    .map(|m| m.match_info)
                     .collect();
 
                 let champions =
@@ -61,12 +61,16 @@ impl ApplicationData {
             Mode::RecentMatches(recent) => {
                 // Name + Recent Matches
                 let ranked_summoner = Summoner::new(&config.account.riot_id, data.ranked);
-                let match_history = MatchHistory::new(
-                    &data.matches.unwrap(),
-                    &data.summoner,
-                    recent.recent_matches,
-                )
-                .unwrap();
+
+                let matches: Vec<match_v5::Info> = data
+                    .matches
+                    .unwrap()
+                    .into_iter()
+                    .map(|m| m.match_info)
+                    .collect();
+
+                let match_history =
+                    MatchHistory::new(&matches, &data.summoner, recent.recent_matches).unwrap();
 
                 sections.push(DisplayableSectionKind::Summoner(ranked_summoner));
                 sections.push(DisplayableSectionKind::MatchHistory(match_history));

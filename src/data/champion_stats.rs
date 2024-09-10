@@ -6,7 +6,10 @@ use anyhow::Result;
 use lolfetch_color::ColoredString;
 use riven::{
     consts::Champion,
-    models::{match_v5::Match, summoner_v4::Summoner},
+    models::{
+        match_v5::{self, Info, Match},
+        summoner_v4::Summoner,
+    },
 };
 use std::collections::HashMap;
 
@@ -21,11 +24,11 @@ pub struct RecentChampionInfo {
 }
 
 impl RecentChampionInfo {
-    pub fn new(matches: &[Match], summoner: &Summoner, max_champs: i32) -> Result<Self> {
+    pub fn new(matches: &[match_v5::Info], summoner: &Summoner, max_champs: i32) -> Result<Self> {
         let mut stats = HashMap::new();
 
         for game in matches {
-            let match_info = MatchPlayerInfo::from_match(game, summoner)?;
+            let match_info = MatchPlayerInfo::from_match_info(game, summoner)?;
             let champion_stats = stats.entry(match_info.champion).or_insert(GameStats::new());
             champion_stats.add_game(&match_info);
         }

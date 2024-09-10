@@ -8,12 +8,13 @@ use riven::{
 use std::{collections::HashMap, fmt};
 use thiserror::Error;
 
-pub type MatchId = i64;
+pub type MatchId = String;
 pub type MatchMap = HashMap<MatchId, MatchInfo>;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 /// Match information.
 pub struct MatchInfo {
+    pub id: MatchId,
     pub match_info: match_v5::Info,
     pub timeline_info: Option<match_v5::InfoTimeLine>,
 }
@@ -52,8 +53,8 @@ pub struct MatchPlayerInfo {
 }
 
 impl MatchPlayerInfo {
-    pub fn from_match(
-        match_data: &match_v5::Match,
+    pub fn from_match_info(
+        match_data: &match_v5::Info,
         summoner: &summoner_v4::Summoner,
     ) -> Result<Self, MatchPlayerInfoError> {
         let participant = match_data.get_participant(summoner)?;
@@ -137,10 +138,9 @@ pub trait ParticipantGetter {
     fn get_participant(&self, summoner: &Summoner) -> Result<&Participant, ParticipantGetterError>;
 }
 
-impl ParticipantGetter for match_v5::Match {
+impl ParticipantGetter for match_v5::Info {
     fn get_participant(&self, summoner: &Summoner) -> Result<&Participant, ParticipantGetterError> {
-        self.info
-            .participants
+        self.participants
             .iter()
             .find(|p| p.puuid == summoner.puuid)
             .ok_or(ParticipantGetterError::ParticipantNotFound)
@@ -157,10 +157,9 @@ pub trait TeamGetter {
     fn get_my_team(&self, participant: &Participant) -> Result<&Team, TeamGetterError>;
 }
 
-impl TeamGetter for match_v5::Match {
+impl TeamGetter for match_v5::Info {
     fn get_my_team(&self, participant: &Participant) -> Result<&Team, TeamGetterError> {
-        self.info
-            .teams
+        self.teams
             .iter()
             .find(|t| t.team_id == participant.team_id)
             .ok_or(TeamGetterError::TeamNotFound)
@@ -177,10 +176,9 @@ pub trait GameTimeGetter {
     fn get_max_time(&self) -> Result<i32, GameTimeGetterError>;
 }
 
-impl GameTimeGetter for match_v5::Match {
+impl GameTimeGetter for match_v5::Info {
     fn get_max_time(&self) -> Result<i32, GameTimeGetterError> {
-        self.info
-            .participants
+        self.participants
             .iter()
             .map(|p| p.time_played)
             .max()

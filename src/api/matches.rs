@@ -1,6 +1,7 @@
 //! League of Legends match data.
 
 use crate::{
+    cache,
     config::{self, Mode},
     models::matches::MatchInfo,
 };
@@ -12,38 +13,31 @@ use riven::{
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum RetrieverError {
+pub enum IdRetrieverError {
     #[error("Failed to fetch matches: {0}")]
-    FetchError(#[from] riven::RiotApiError),
-
-    #[error("Failed to get match data")]
-    MatchDataError,
-
-    #[error("Failed to get match timeline")]
-    MatchTimelineError,
+    Fetch(#[from] riven::RiotApiError),
 }
 
 trait Retriever {
-    /// Returns x recent matches of a summoner.
-    async fn get_recent_matches(
+    /// Returns x recent match IDs of a summonner
+    async fn get_recent_matches_ids(
         &self,
         summoner: &Summoner,
         route: RegionalRoute,
         count: i32,
         queue: Option<Queue>,
-    ) -> Result<Vec<MatchInfo>, RetrieverError>;
+    ) -> Result<Vec<String>, riven::RiotApiError>;
 }
 
 impl Retriever for RiotApi {
-    async fn get_recent_matches(
+    async fn get_recent_matches_ids(
         &self,
         summoner: &Summoner,
         route: RegionalRoute,
         count: i32,
         queue: Option<Queue>,
-    ) -> Result<Vec<MatchInfo>, RetrieverError> {
-        let match_list = self
-            .match_v5()
+    ) -> Result<Vec<String>, riven::RiotApiError> {
+        self.match_v5()
             .get_match_ids_by_puuid(
                 route,
                 &summoner.puuid,
@@ -54,30 +48,7 @@ impl Retriever for RiotApi {
                 None,
                 None,
             )
-            .await?;
-
-        let mut matches = Vec::new();
-        for match_id in match_list {
-            let match_data = self
-                .match_v5()
-                .get_match(route, &match_id)
-                .await?
-                .ok_or_else(|| RetrieverError::MatchDataError)?;
-
-            let timeline = self
-                .match_v5()
-                .get_timeline(route, &match_id)
-                .await?
-                .ok_or_else(|| RetrieverError::MatchDataError)?;
-
-            if !is_remake(&match_data) {
-                matches.push(MatchInfo {
-                    match_info: match_data.info,
-                    timeline_info: Some(timeline.info),
-                });
-            }
-        }
-        Ok(matches)
+            .await
     }
 }
 
@@ -119,7 +90,7 @@ impl Mode {
 #[derive(Error, Debug)]
 pub enum FetcherError {
     #[error("Failed to retrieve matches: {0}")]
-    FetchError(#[from] RetrieverError),
+    FetchError(#[from] riven::RiotApiError),
 
     #[error("Invalid mode for fetching matches")]
     InvalidMode,
@@ -132,6 +103,7 @@ pub trait Fetcher {
         summoner: &Summoner,
         route: RegionalRoute,
         config: &config::Mode,
+        cache: &cache::Cache,
     ) -> Result<Option<Vec<MatchInfo>>, FetcherError>;
 }
 
@@ -141,14 +113,35 @@ impl Fetcher for RiotApi {
         summoner: &Summoner,
         route: RegionalRoute,
         config: &config::Mode,
+        cache: &cache::Cache,
     ) -> Result<Option<Vec<MatchInfo>>, FetcherError> {
         let criteria = config
             .to_match_criteria()
             .ok_or(FetcherError::InvalidMode)?;
 
-        self.get_recent_matches(summoner, route, criteria.count, criteria.queue)
-            .await
-            .map(Some)
-            .map_err(FetcherError::FetchError)
+        let ids = self
+            .get_recent_matches_ids(summoner, route, criteria.count, criteria.queue)
+            .await?;
+
+        let mut matches = Vec::new();
+
+        for id in ids {
+            if !cache.contains(id.clone()) {
+                let match_info = self.match_v5().get_match(route, &id).await?.unwrap();
+                let timeline = self.match_v5().get_timeline(route, &id).await?.unwrap();
+
+                let info = MatchInfo {
+                    id: match_info.metadata.match_id.clone(),
+                    match_info: match_info.info,
+                    timeline_info: Some(timeline.info),
+                };
+
+                matches.push(info);
+            } else {
+                println!("Ignoring match {id}");
+            }
+        }
+
+        Ok(Some(matches))
     }
 }

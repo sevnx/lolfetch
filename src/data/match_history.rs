@@ -2,7 +2,7 @@ use crate::display::DisplayableSection;
 use crate::models::champion_stats::GameStats;
 use crate::models::matches::{GameResult, MatchPlayerInfo, MatchPlayerInfoError};
 use lolfetch_color::ColoredString;
-use riven::models::match_v5::Match;
+use riven::models::match_v5::{self, Match};
 use riven::models::summoner_v4::Summoner;
 use termcolor::Color;
 
@@ -12,14 +12,14 @@ pub struct MatchHistory {
 
 impl MatchHistory {
     pub fn new(
-        matches: &[Match],
+        matches: &[match_v5::Info],
         summoner: &Summoner,
         max_games: i32,
     ) -> Result<Self, MatchPlayerInfoError> {
         let match_infos = matches
             .iter()
             .take(max_games as usize)
-            .map(|game| MatchPlayerInfo::from_match(game, summoner))
+            .map(|game| MatchPlayerInfo::from_match_info(game, summoner))
             .collect::<Result<Vec<_>, _>>()?;
         Ok(Self {
             matches: match_infos,

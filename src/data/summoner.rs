@@ -72,7 +72,7 @@ impl DisplayableSection for Summoner {
             ));
 
             winrate_string.push_str(
-                &format!(" {:.1}%", ranked.get_winrate().unwrap(),),
+                &format!(" {:.1}%", ranked.get_winrate().unwrap()),
                 Some(rank_color),
                 None,
             );
