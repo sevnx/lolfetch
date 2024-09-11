@@ -127,6 +127,8 @@ impl Fetcher for RiotApi {
 
         for id in ids {
             if !cache.contains(id.clone()) {
+                info!("Fetched match {id}");
+
                 let match_info = self.match_v5().get_match(route, &id).await?.unwrap();
                 let timeline = self.match_v5().get_timeline(route, &id).await?.unwrap();
 
@@ -138,7 +140,7 @@ impl Fetcher for RiotApi {
 
                 matches.push(info);
             } else {
-                println!("Ignoring match {id}");
+                info!("Ignoring match {id}");
             }
         }
 

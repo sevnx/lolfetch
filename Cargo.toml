@@ -10,8 +10,11 @@ tokio = { version = "1.39.2", features = ["full"] }
 clap = { version = "4.5.15", features = ["derive"] }
 dotenv = "0.15.0"
 anyhow = "1.0.86"
+log = "0.4.22"
 thiserror = "1.0.63"
 tokio-macros = "2.2.0"
+tracing = "0.1.40"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 lolfetch-ascii = { path = "./lolfetch_ascii" }
 lolfetch_color = { path = "./lolfetch_color" }
 url = "2.5.2"

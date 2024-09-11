@@ -3,7 +3,7 @@ use clap::Parser;
 use riven::{RiotApi, RiotApiConfig};
 
 use crate::{
-    api::Fetcher, cache, cli::Cli, config::Config, data::ApplicationData, display::Layout,
+    api::Fetcher, cache, cli::Cli, config::Config, data::ApplicationData, display::Layout, logging,
 };
 
 pub struct App {}
@@ -13,10 +13,15 @@ impl App {
         dotenv::dotenv()?;
 
         let options = Cli::parse();
+        if options.verbose {
+            logging::setup();
+        }
+
         let config = Config::from_cli(options)?;
         let api = RiotApi::new(RiotApiConfig::with_key(&config.api_key));
         let data = api.fetch(&config).await?;
         let processed = ApplicationData::process(data, &config).await;
+        info!("Displaying data");
         Layout::new(processed).display()
     }
 }

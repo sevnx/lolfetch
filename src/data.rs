@@ -25,8 +25,9 @@ pub struct ApplicationData {
 
 impl ApplicationData {
     pub async fn process(data: ApiData, config: &Config) -> Self {
-        let mut sections = Vec::new();
+        info!("Processing fetched data");
 
+        let mut sections = Vec::new();
         match &config.mode {
             Mode::Ranked(ranked) => {
                 // Name + Ranked champion stats + Recent Matches
@@ -77,6 +78,8 @@ impl ApplicationData {
             }
             _ => {}
         }
+
+        info!("Finished processing data");
 
         Self {
             image: lolfetch_ascii::from_url(&data.image_url, IMAGE_WIDTH, IMAGE_HEIGHT)

@@ -25,6 +25,10 @@ pub struct Cli {
     /// API key for the Riot API
     #[clap(long, default_value = "", value_parser = parse_api_key)]
     pub api_key: String,
+
+    /// Verbose mode
+    #[clap(long)]
+    pub verbose: bool,
 }
 
 #[derive(Parser, Debug, Clone)]
@@ -140,11 +144,11 @@ pub enum LeagueServer {
 }
 
 /// Parses the Riot API key from the command line
-fn parse_api_key(s: &str) -> Result<String> {
-    if s.is_empty() {
+fn parse_api_key(key: &str) -> Result<String> {
+    if key.is_empty() {
         std::env::var("RIOT_API_KEY").context("API key not found")
     } else {
-        Ok(s.to_string())
+        Ok(key.to_string())
     }
 }
 

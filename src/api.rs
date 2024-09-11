@@ -49,6 +49,8 @@ pub struct Data {
 
 impl Fetcher for RiotApi {
     async fn fetch(&self, config: &Config) -> Result<Data> {
+        info!("Fetching data from Riot API");
+
         // Construct commonly used data structs for fetching data.
         let summoner = self.fetch_summoner(&config.account).await?;
 
@@ -118,6 +120,8 @@ impl Fetcher for RiotApi {
         }
 
         let matches = cache.save()?;
+
+        info!("Data fetched successfully");
 
         Ok(Data {
             summoner,
