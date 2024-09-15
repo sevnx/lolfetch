@@ -113,4 +113,13 @@ impl Cache {
 
         Ok(match_vec)
     }
+
+    /// Clears the cache
+    pub fn clear(summoner: &Option<Summoner>, route: PlatformRoute) -> anyhow::Result<()> {
+        let dir = match summoner {
+            Some(summoner) => get_summoner_cache_dir(summoner, route)?,
+            None => get_cache_dir()?,
+        };
+        Ok(())
+    }
 }

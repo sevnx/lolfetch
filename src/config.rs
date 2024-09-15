@@ -1,8 +1,13 @@
 //! This module regroups the configuration of the application.
 //! It is used to load the configuration from CLI arguments and environment variables.
 
-use crate::api::account::RiotId;
-use crate::cli::{Cli, DisplayConfig, ImageSource, InfoOptions, InfoType};
+use crate::{
+    api::account::RiotId,
+    cli::{
+        self,
+        lolfetch::{DisplayConfig, ImageSource, InfoOptions, InfoType},
+    },
+};
 use anyhow::{Context, Result};
 use riven::consts::{Champion, PlatformRoute};
 
@@ -22,7 +27,7 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn from_cli(value: Cli) -> Result<Self> {
+    pub fn from_cli(value: cli::lolfetch::Lolfetch) -> Result<Self> {
         Ok(Self {
             api_key: value.api_key,
             account: Account {
