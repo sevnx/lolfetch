@@ -14,17 +14,24 @@ pub mod lolfetch;
 #[command(author, version, about, long_about = None)]
 pub struct Cli {
     #[command(subcommand)]
-    pub command: Option<Commands>,
+    pub command: Commands,
 
     /// Verbose mode
     #[clap(long)]
     pub verbose: bool,
+
+    /// API key for the Riot API
+    #[clap(long, default_value = "", value_parser = parse_api_key)]
+    pub api_key: String,
 }
 
 #[derive(Subcommand, Debug)]
 pub enum Commands {
     /// Cache management
     Cache(cache::Cache),
+
+    /// Default lolfetch mode
+    Display(lolfetch::Lolfetch),
 }
 
 #[derive(Parser, Debug, Clone)]
@@ -59,4 +66,13 @@ pub enum LeagueServer {
     Th,
     Mena,
     Pbe,
+}
+
+/// Parses the Riot API key from the command line
+fn parse_api_key(key: &str) -> Result<String> {
+    if key.is_empty() {
+        std::env::var("RIOT_API_KEY").context("API key not found")
+    } else {
+        Ok(key.to_string())
+    }
 }

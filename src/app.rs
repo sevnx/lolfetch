@@ -5,7 +5,7 @@ use riven::{RiotApi, RiotApiConfig};
 use crate::{
     api::Fetcher,
     cache,
-    cli::{self, cache::CacheAction, Cli},
+    cli::{self, cache::CacheAction, Cli, Commands},
     config::{Config, Lolfetch},
     data::ApplicationData,
     display::Layout,
@@ -24,19 +24,17 @@ impl App {
         }
 
         match options.command {
-            None => {
-                let config = Config::from_cli(cli::lolfetch::Lolfetch::parse())?;
+            Commands::Display(config) => {
+                let config = Config::from_cli(config, options.api_key)?;
                 let api = RiotApi::new(RiotApiConfig::with_key(&config.api_key));
                 let data = api.fetch(&config).await?;
                 let processed = ApplicationData::process(data, &config).await?;
                 info!("Displaying data");
                 Layout::new(processed).display()?;
             }
-            Some(command) => match command {
-                cli::Commands::Cache(cache) => match cache.action {
-                    CacheAction::Clear(_) => {}
-                    CacheAction::Load(_) => {}
-                },
+            Commands::Cache(cache) => match cache.action {
+                CacheAction::Clear(_) => {}
+                CacheAction::Load(_) => {}
             },
         }
 

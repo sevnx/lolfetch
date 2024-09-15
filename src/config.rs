@@ -27,9 +27,9 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn from_cli(value: cli::lolfetch::Lolfetch) -> Result<Self> {
+    pub fn from_cli(value: cli::lolfetch::Lolfetch, api_key: String) -> Result<Self> {
         Ok(Self {
-            api_key: value.api_key,
+            api_key,
             account: Account {
                 riot_id: value.summoner.riot_id,
                 server: value.summoner.server.into(),
