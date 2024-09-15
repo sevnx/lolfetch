@@ -15,8 +15,8 @@ pub type MatchMap = HashMap<MatchId, MatchInfo>;
 /// Match information.
 pub struct MatchInfo {
     pub id: MatchId,
-    pub match_info: match_v5::Info,
-    pub timeline_info: Option<match_v5::InfoTimeLine>,
+    pub info: match_v5::Info,
+    pub timeline: Option<match_v5::InfoTimeLine>,
 }
 
 #[derive(Debug, Error)]
@@ -60,9 +60,10 @@ impl MatchPlayerInfo {
         let participant = match_data.get_participant(summoner)?;
         let team = match_data.get_my_team(participant)?;
         let max_time = match_data.get_max_time()?;
-        let game_result = match team.win {
-            true => GameResult::Win,
-            false => GameResult::Loss,
+        let game_result = if team.win {
+            GameResult::Win
+        } else {
+            GameResult::Loss
         };
 
         Ok(Self {

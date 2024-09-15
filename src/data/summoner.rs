@@ -39,6 +39,8 @@ impl DisplayableSection for Summoner {
     }
 
     fn body(&self) -> Vec<ColoredString> {
+        const WINRATE_BAR_WIDTH: i32 = 30;
+
         let mut body = Vec::new();
 
         // Summoner name
@@ -63,7 +65,6 @@ impl DisplayableSection for Summoner {
 
             // Winrate bar
             let mut winrate_string = ColoredString::from_unformatted_str(&" ".repeat(6));
-            const WINRATE_BAR_WIDTH: i32 = 30;
             winrate_string.join(&generate_loading_bar(
                 ranked.wins,
                 ranked.losses,

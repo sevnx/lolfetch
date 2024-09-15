@@ -61,15 +61,14 @@ impl DisplayableSection for RecentChampionInfo {
         let mut stat_iter = self.stats.iter();
 
         for _ in 0..5 {
-            let champion_stats = match stat_iter.next() {
-                Some(stats) => stats,
-                None => break,
+            let Some(champion_stats) = stat_iter.next() else {
+                break;
             };
             let mut champion_body = ColoredString::new();
-            let kda_str = match champion_stats.stats.kda() {
-                Some(kda) => format!("{:.1} KDA", kda),
-                None => "PERFECT".to_string(),
-            };
+            let kda_str = champion_stats
+                .stats
+                .kda()
+                .map_or_else(|| "PERFECT".to_string(), |kda| format!("{kda:.1} KDA"));
 
             champion_body.push_unformatted_str(&format!(
                 "{:<12} - {:.0}% WR - {} - {:.1} CS/M - {} Played",

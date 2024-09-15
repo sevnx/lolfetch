@@ -72,7 +72,7 @@ pub struct Layout {
 }
 
 impl Layout {
-    pub fn new(processed: ApplicationData) -> Self {
+    pub const fn new(processed: ApplicationData) -> Self {
         Self { processed }
     }
 
@@ -95,14 +95,14 @@ impl Layout {
             let diff = (logo_lines.len() - info_lines.len()) / 2;
             for (i, logo_line) in logo_lines.enumerate() {
                 if i < diff {
-                    buffer.print(&self.format_line(Some(logo_line), None)?)?;
+                    buffer.print(&Self::format_line(Some(logo_line), None)?)?;
                 } else {
-                    buffer.print(&self.format_line(Some(logo_line), info_lines.next())?)?;
+                    buffer.print(&Self::format_line(Some(logo_line), info_lines.next())?)?;
                 }
             }
         } else {
             for info_line in info_lines {
-                buffer.print(&self.format_line(logo_lines.next(), Some(info_line))?)?;
+                buffer.print(&Self::format_line(logo_lines.next(), Some(info_line))?)?;
             }
         }
 
@@ -110,7 +110,6 @@ impl Layout {
     }
 
     fn format_line(
-        &self,
         logo_line: Option<&ColoredString>,
         info_line: Option<&ColoredString>,
     ) -> Result<Buffer> {
@@ -126,7 +125,7 @@ impl Layout {
             info.display(&mut buffer)?;
         }
 
-        buffer.write_all("\n".as_bytes())?;
+        buffer.write_all(b"\n")?;
 
         Ok(buffer)
     }

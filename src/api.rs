@@ -97,7 +97,7 @@ impl Fetcher for RiotApi {
                         .unwrap()
                         .first()
                         .unwrap()
-                        .match_info
+                        .info
                         .participants
                         .iter()
                         .find(|p| p.puuid == summoner.puuid)
@@ -115,8 +115,10 @@ impl Fetcher for RiotApi {
             Image::Custom(url) => url,
         };
 
-        for info in matches.unwrap() {
-            cache.insert(info.id.clone(), info);
+        if let Some(matches) = matches {
+            matches
+                .into_iter()
+                .for_each(|info| cache.insert(info.id.clone(), info));
         }
 
         let matches = cache.save()?;

@@ -1,22 +1,28 @@
 //! This module handles gathering information to display to the user.
 
+use crate::{
+    api::Data as ApiData,
+    config::{Config, Mode},
+    display::{DisplayableSectionKind, IMAGE_HEIGHT, IMAGE_WIDTH},
+};
 use champion_stats::RecentChampionInfo;
 use lolfetch_ascii::ColoredArt;
 use mastery::Mastery;
 use match_history::MatchHistory;
 use riven::models::match_v5;
 use summoner::Summoner;
-
-use crate::{
-    api::Data as ApiData,
-    config::{Config, Mode},
-    display::{DisplayableSectionKind, IMAGE_HEIGHT, IMAGE_WIDTH},
-};
+use thiserror::Error;
 
 pub mod champion_stats;
 pub mod mastery;
 pub mod match_history;
 pub mod summoner;
+
+#[derive(Error, Debug)]
+pub enum ProcessingError {
+    #[error("Failed to fetch image")]
+    ImageFetchError(#[from] lolfetch_ascii::ArtProcessingError),
+}
 
 pub struct ApplicationData {
     pub image: ColoredArt,
@@ -24,7 +30,7 @@ pub struct ApplicationData {
 }
 
 impl ApplicationData {
-    pub async fn process(data: ApiData, config: &Config) -> Self {
+    pub async fn process(data: ApiData, config: &Config) -> Result<Self, ProcessingError> {
         info!("Processing fetched data");
 
         let mut sections = Vec::new();
@@ -33,12 +39,8 @@ impl ApplicationData {
                 // Name + Ranked champion stats + Recent Matches
                 let ranked_summoner = Summoner::new(&config.account.riot_id, data.ranked);
 
-                let matches: Vec<match_v5::Info> = data
-                    .matches
-                    .unwrap()
-                    .into_iter()
-                    .map(|m| m.match_info)
-                    .collect();
+                let matches: Vec<match_v5::Info> =
+                    data.matches.unwrap().into_iter().map(|m| m.info).collect();
 
                 let champions =
                     RecentChampionInfo::new(&matches, &data.summoner, ranked.top_champions)
@@ -63,12 +65,8 @@ impl ApplicationData {
                 // Name + Recent Matches
                 let ranked_summoner = Summoner::new(&config.account.riot_id, data.ranked);
 
-                let matches: Vec<match_v5::Info> = data
-                    .matches
-                    .unwrap()
-                    .into_iter()
-                    .map(|m| m.match_info)
-                    .collect();
+                let matches: Vec<match_v5::Info> =
+                    data.matches.unwrap().into_iter().map(|m| m.info).collect();
 
                 let match_history =
                     MatchHistory::new(&matches, &data.summoner, recent.recent_matches).unwrap();
@@ -81,11 +79,8 @@ impl ApplicationData {
 
         info!("Finished processing data");
 
-        Self {
-            image: lolfetch_ascii::from_url(&data.image_url, IMAGE_WIDTH, IMAGE_HEIGHT)
-                .await
-                .unwrap(),
-            sections,
-        }
+        let image = lolfetch_ascii::from_url(&data.image_url, IMAGE_WIDTH, IMAGE_HEIGHT).await?;
+
+        Ok(Self { image, sections })
     }
 }

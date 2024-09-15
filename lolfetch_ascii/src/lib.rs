@@ -3,5 +3,6 @@
 mod image;
 
 // Re-exporting the image functions
+pub use image::ArtProcessingError;
 pub use image::ColoredArt;
 pub use image::{from_file_path, from_url};

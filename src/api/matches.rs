@@ -52,7 +52,7 @@ impl Retriever for RiotApi {
     }
 }
 
-fn is_remake(match_data: &Match) -> bool {
+const fn is_remake(match_data: &Match) -> bool {
     const MINUTES_UNTIL_REMAKE: i64 = 3;
     match_data.info.game_duration < MINUTES_UNTIL_REMAKE * 60
 }
@@ -64,25 +64,25 @@ pub struct MatchCriteria {
 }
 
 impl Mode {
-    fn to_match_criteria(&self) -> Option<MatchCriteria> {
+    const fn to_match_criteria(&self) -> Option<MatchCriteria> {
         match self {
-            Mode::Ranked(ref ranked) => Some(MatchCriteria {
+            Self::Ranked(ref ranked) => Some(MatchCriteria {
                 count: ranked.games,
                 queue: Some(Queue::SUMMONERS_RIFT_5V5_RANKED_SOLO),
             }),
-            Mode::Lolfetch(ref lolfetch) => Some(MatchCriteria {
+            Self::Lolfetch(ref lolfetch) => Some(MatchCriteria {
                 count: lolfetch.games,
                 queue: None,
             }),
-            Mode::Mastery(ref mastery) => Some(MatchCriteria {
+            Self::Mastery(ref mastery) => Some(MatchCriteria {
                 count: mastery.games,
                 queue: None,
             }),
-            Mode::RecentMatches(ref recent_matches) => Some(MatchCriteria {
+            Self::RecentMatches(ref recent_matches) => Some(MatchCriteria {
                 count: recent_matches.recent_matches,
                 queue: None,
             }),
-            Mode::Custom(_) => None,
+            Self::Custom(_) => None,
         }
     }
 }
@@ -126,7 +126,7 @@ impl Fetcher for RiotApi {
         let mut matches = Vec::new();
 
         for id in ids {
-            if !cache.contains(id.clone()) {
+            if !cache.contains(&id) {
                 info!("Fetched match {id}");
 
                 let match_info = self.match_v5().get_match(route, &id).await?.unwrap();
@@ -134,8 +134,8 @@ impl Fetcher for RiotApi {
 
                 let info = MatchInfo {
                     id: match_info.metadata.match_id.clone(),
-                    match_info: match_info.info,
-                    timeline_info: Some(timeline.info),
+                    info: match_info.info,
+                    timeline: Some(timeline.info),
                 };
 
                 matches.push(info);

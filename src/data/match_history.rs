@@ -58,7 +58,7 @@ impl DisplayableSection for MatchHistory {
             let game_stats = GameStats::from(match_info);
 
             if let Some(kda) = game_stats.kda() {
-                match_body.push_unformatted_str(&format!("{:.2} KDA", kda));
+                match_body.push_unformatted_str(&format!("{kda:.2} KDA"));
             } else {
                 match_body.push_unformatted_str("PERFECT");
             }

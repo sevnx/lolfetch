@@ -10,7 +10,7 @@ pub type ColoredArt = Vec<ColoredString>;
 
 /// Error type for the ASCII art processing
 #[derive(Error, Debug)]
-pub enum ArtProcesingError {
+pub enum ArtProcessingError {
     #[error("Image processing error: {0}")]
     ImageError(#[from] image::ImageError),
     #[error("Network error: {0}")]
@@ -24,7 +24,11 @@ pub fn from_file_path(path: &Path, width: u32, height: u32) -> Result<ColoredArt
 }
 
 /// Creates an ASCII art of an image from a URL
-pub async fn from_url(url: &str, width: u32, height: u32) -> Result<ColoredArt, ArtProcesingError> {
+pub async fn from_url(
+    url: &str,
+    width: u32,
+    height: u32,
+) -> Result<ColoredArt, ArtProcessingError> {
     let response = Client::new().get(url).send().await?;
     let image_data = response.bytes().await?;
     let image = image::load_from_memory(&image_data)?;

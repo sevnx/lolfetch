@@ -20,7 +20,7 @@ impl App {
         let config = Config::from_cli(options)?;
         let api = RiotApi::new(RiotApiConfig::with_key(&config.api_key));
         let data = api.fetch(&config).await?;
-        let processed = ApplicationData::process(data, &config).await;
+        let processed = ApplicationData::process(data, &config).await?;
         info!("Displaying data");
         Layout::new(processed).display()
     }

@@ -71,7 +71,7 @@ impl Cache {
         }
 
         let cache_str = std::fs::read_to_string(&file_path)?;
-        fs::remove_file(&file_path).map_err(|e| format!("Failed to remove file : {:?}", e));
+        fs::remove_file(&file_path).map_err(|e| format!("Failed to remove file : {e:?}"));
         Ok(
             match serde_json::from_str::<HashMap<MatchId, MatchInfo>>(&cache_str) {
                 Ok(cache) => Self {
@@ -88,8 +88,8 @@ impl Cache {
         self.match_info.insert(match_id, info);
     }
 
-    pub fn contains(&self, match_id: MatchId) -> bool {
-        self.match_info.contains_key(&match_id)
+    pub fn contains(&self, match_id: &MatchId) -> bool {
+        self.match_info.contains_key(match_id)
     }
 
     pub fn is_empty(&self) -> bool {
@@ -109,7 +109,7 @@ impl Cache {
         let mut match_vec: Vec<MatchInfo> = self.match_info.into_values().collect();
 
         // Reversed sort
-        match_vec.sort_by(|a, b| b.match_info.game_creation.cmp(&a.match_info.game_creation));
+        match_vec.sort_by(|a, b| b.info.game_creation.cmp(&a.info.game_creation));
 
         Ok(match_vec)
     }

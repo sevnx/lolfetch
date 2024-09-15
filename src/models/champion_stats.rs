@@ -10,7 +10,7 @@ pub struct GameStats {
 }
 
 impl GameStats {
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             wins: 0,
             losses: 0,
@@ -28,7 +28,7 @@ impl GameStats {
         self.kda.get_kda()
     }
 
-    pub fn total_games(&self) -> u32 {
+    pub const fn total_games(&self) -> u32 {
         self.wins + self.losses
     }
 
@@ -49,7 +49,7 @@ impl GameStats {
 
 impl From<&MatchPlayerInfo> for GameStats {
     fn from(match_info: &MatchPlayerInfo) -> Self {
-        let mut stats = GameStats::new();
+        let mut stats = Self::new();
         stats.add_game(match_info);
         stats
     }

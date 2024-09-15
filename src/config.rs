@@ -50,7 +50,7 @@ impl Config {
         })
     }
 
-    fn parse_mode_config(info: &InfoOptions) -> Mode {
+    const fn parse_mode_config(info: &InfoOptions) -> Mode {
         match info.info {
             InfoType::Ranked => Mode::Ranked(Ranked {
                 games: info.games,
