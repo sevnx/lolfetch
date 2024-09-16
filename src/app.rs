@@ -21,6 +21,8 @@ impl App {
         if options.verbose {
             logging::setup();
         }
+        info!("Starting lolfetch");
+
         let api = RiotApi::new(RiotApiConfig::with_key(&options.api_key));
 
         match options.command {
@@ -34,8 +36,13 @@ impl App {
             Commands::Cache(cache) => match cache.action {
                 CacheAction::Clear(config) => match config.summoner {
                     Some(summoner_config) => {
-                        let summoner = api.fetch_summoner(&summoner_config.clone().into()).await?;
-                        cache::Cache::clear(Some((summoner, summoner_config.server.into())));
+                        if let Ok(summoner) =
+                            api.fetch_summoner(&summoner_config.clone().into()).await
+                        {
+                            cache::Cache::clear(Some((summoner, summoner_config.server.into())));
+                        } else {
+                            error!("Failed to fetch summoner {summoner_config:?}");
+                        }
                     }
                     None => {
                         cache::Cache::clear(None);
