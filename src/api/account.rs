@@ -62,7 +62,12 @@ impl PuuidGetter for riven::RiotApi {
             Ok(account) => account
                 .map(|account| account.puuid)
                 .ok_or(PuuidFetchError::AccountNotFound),
-            Err(e) => Err(PuuidFetchError::ApiError(e)),
+            Err(e) => match e.status_code() {
+                Some(riven::reqwest::StatusCode::NOT_FOUND) => {
+                    Err(PuuidFetchError::AccountNotFound)
+                }
+                _ => Err(PuuidFetchError::ApiError(e)),
+            },
         }
     }
 }
@@ -71,6 +76,9 @@ impl PuuidGetter for riven::RiotApi {
 pub enum FetcherError {
     #[error("{0}")]
     PuuidError(#[from] PuuidFetchError),
+
+    #[error("Summoner not found on the server")]
+    SummonerNotFound,
 
     #[error("Failed to fetch summoner")]
     FetchError(#[from] riven::RiotApiError),
@@ -91,9 +99,15 @@ impl Fetcher for riven::RiotApi {
     ) -> Result<summoner_v4::Summoner, FetcherError> {
         let puuid = self.get_puuid(&config.riot_id).await?;
 
-        self.summoner_v4()
-            .get_by_puuid(config.server, &puuid)
-            .await
-            .map_err(FetcherError::FetchError)
+        match self.summoner_v4().get_by_puuid(config.server, &puuid).await {
+            Ok(summoner) => Ok(summoner),
+            Err(e) => {
+                if let Some(riven::reqwest::StatusCode::NOT_FOUND) = e.status_code() {
+                    Err(FetcherError::SummonerNotFound)
+                } else {
+                    Err(FetcherError::FetchError(e))
+                }
+            }
+        }
     }
 }

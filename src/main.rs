@@ -2,6 +2,7 @@
 
 use anyhow::Result;
 use app::App;
+use clap::Parser;
 
 #[macro_use]
 extern crate log;
@@ -19,5 +20,6 @@ mod models;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    App::run().await
+    dotenv::dotenv()?;
+    App::run(cli::Cli::parse()).await
 }
