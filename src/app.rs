@@ -1,18 +1,16 @@
 use crate::{
     api::{
-        self,
         account::{self, Fetcher as AccountFetcher, PuuidFetchError},
-        Fetcher,
+        Fetcher as ApiFetcher,
     },
     cache,
     cli::{self, cache::CacheAction, Cli, Commands},
-    config::{Config, Lolfetch},
+    config::Config,
     data::ApplicationData,
     display::Layout,
     logging,
 };
 use anyhow::Result;
-use clap::Parser;
 use riven::{RiotApi, RiotApiConfig};
 
 pub struct App {}
@@ -20,7 +18,10 @@ pub struct App {}
 impl App {
     pub async fn run(cli: Cli) -> Result<()> {
         if cli.verbose {
-            logging::setup();
+            match logging::setup() {
+                Ok(_) => info!("Logging initialized"),
+                Err(e) => eprintln!("Error initializing logging: {}", e),
+            }
         }
         info!("Starting lolfetch");
 

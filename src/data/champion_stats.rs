@@ -6,10 +6,7 @@ use anyhow::Result;
 use lolfetch_color::ColoredString;
 use riven::{
     consts::Champion,
-    models::{
-        match_v5::{self, Info, Match},
-        summoner_v4::Summoner,
-    },
+    models::{match_v5, summoner_v4::Summoner},
 };
 use std::collections::HashMap;
 

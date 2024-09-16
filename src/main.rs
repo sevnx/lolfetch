@@ -1,11 +1,9 @@
-#![allow(unused)]
+#[macro_use]
+extern crate log;
 
 use anyhow::Result;
 use app::App;
 use clap::Parser;
-
-#[macro_use]
-extern crate log;
 
 // Crate modules
 mod api;

@@ -1,9 +1,9 @@
 //! Module that handles the interaction with the various APIs used to gather data.
 
 use crate::{
-    cache::{self, Cache},
+    cache,
     config::{Config, Image, Mode},
-    models::matches::{MatchInfo, MatchMap},
+    models::matches::MatchInfo,
 };
 use account::Fetcher as AccountFetcher;
 use anyhow::Result;
@@ -12,7 +12,7 @@ use matches::Fetcher as MatchesFetcher;
 use rank::Fetcher as RankFetcher;
 use riven::{
     consts::QueueType,
-    models::{champion_mastery_v4, league_v4, match_v5, summoner_v4},
+    models::{champion_mastery_v4, league_v4, summoner_v4},
     RiotApi,
 };
 use tooling::static_data::IconGetter;
@@ -55,7 +55,7 @@ impl Fetcher for RiotApi {
         let summoner = self.fetch_summoner(&config.account).await?;
 
         // Get cached data
-        let mut cache = Cache::load_cache(summoner.clone(), config.account.server)?;
+        let mut cache = cache::Cache::load_cache(summoner.clone(), config.account.server)?;
 
         // Ranked information.
         let ranked = self

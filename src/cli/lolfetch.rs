@@ -1,9 +1,8 @@
 //! lolfetch CLI module
 
 use super::SummonerConfig;
-use crate::api::account::RiotId;
 use anyhow::{Context, Error, Result};
-use clap::{Command, Parser, Subcommand, ValueEnum};
+use clap::{Parser, ValueEnum};
 use riven::consts::Champion;
 use std::str::FromStr;
 

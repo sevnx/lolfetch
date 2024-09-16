@@ -1,19 +1,8 @@
 //! Caching methods for fetched data.
 
-use crate::{
-    api, config,
-    models::matches::{MatchInfo, MatchMap},
-};
-use anyhow::Result;
-use riven::{
-    consts::PlatformRoute,
-    models::{lol_status_v4::PlatformData, match_v5, summoner_v4::Summoner},
-};
-use std::{
-    collections::{hash_map::Entry, HashMap},
-    fs, io,
-    path::PathBuf,
-};
+use crate::models::matches::{MatchInfo, MatchMap};
+use riven::{consts::PlatformRoute, models::summoner_v4::Summoner};
+use std::{collections::HashMap, fs, io, path::PathBuf};
 
 /// Returns the cache directory for lolfetch.
 fn get_cache_dir() -> io::Result<PathBuf> {
@@ -71,7 +60,7 @@ impl Cache {
         }
 
         let cache_str = std::fs::read_to_string(&file_path)?;
-        fs::remove_file(&file_path).map_err(|e| format!("Failed to remove file : {e:?}"));
+        fs::remove_file(&file_path)?;
         Ok(
             match serde_json::from_str::<HashMap<MatchId, MatchInfo>>(&cache_str) {
                 Ok(cache) => Self {

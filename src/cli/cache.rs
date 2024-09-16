@@ -1,7 +1,7 @@
 //! Cache CLI module.
 
 use clap::{command, Parser, Subcommand};
-use riven::consts::{Queue, QueueType};
+use riven::consts::QueueType;
 
 use super::SummonerConfig;
 

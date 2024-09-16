@@ -130,6 +130,12 @@ impl Fetcher for RiotApi {
                 info!("Fetched match {id}");
 
                 let match_info = self.match_v5().get_match(route, &id).await?.unwrap();
+
+                if is_remake(&match_info) {
+                    warn!("Ignoring remake match {id}");
+                    continue;
+                }
+
                 let timeline = self.match_v5().get_timeline(route, &id).await?.unwrap();
 
                 let info = MatchInfo {

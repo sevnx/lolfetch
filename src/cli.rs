@@ -1,10 +1,8 @@
 //! This module handles the command line arguments for the application.
 
 use crate::api::account::RiotId;
-use anyhow::{Context, Error, Result};
-use clap::{Command, Parser, Subcommand, ValueEnum};
-use riven::consts::Champion;
-use std::str::FromStr;
+use anyhow::{Context, Result};
+use clap::{Parser, Subcommand, ValueEnum};
 
 pub mod cache;
 pub mod lolfetch;
