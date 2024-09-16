@@ -13,9 +13,6 @@ use riven::consts::{Champion, PlatformRoute};
 
 #[derive(Debug, Clone)]
 pub struct Config {
-    /// API key for the Riot API
-    pub api_key: String,
-
     /// Account information
     pub account: Account,
 
@@ -27,9 +24,8 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn from_cli(value: cli::lolfetch::Lolfetch, api_key: String) -> Result<Self> {
+    pub fn from_cli(value: cli::lolfetch::Lolfetch) -> Result<Self> {
         Ok(Self {
-            api_key,
             account: Account {
                 riot_id: value.summoner.riot_id,
                 server: value.summoner.server.into(),
@@ -82,6 +78,15 @@ pub struct Account {
 
     /// Server the account is registered on
     pub server: PlatformRoute,
+}
+
+impl From<cli::SummonerConfig> for Account {
+    fn from(value: cli::SummonerConfig) -> Self {
+        Self {
+            riot_id: value.riot_id,
+            server: value.server.into(),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]

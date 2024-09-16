@@ -115,11 +115,13 @@ impl Cache {
     }
 
     /// Clears the cache
-    pub fn clear(summoner: &Option<Summoner>, route: PlatformRoute) -> anyhow::Result<()> {
+    pub fn clear(summoner: Option<(Summoner, PlatformRoute)>) -> anyhow::Result<()> {
         let dir = match summoner {
-            Some(summoner) => get_summoner_cache_dir(summoner, route)?,
+            Some(summoner) => get_summoner_cache_dir(&summoner.0, summoner.1)?,
             None => get_cache_dir()?,
         };
+        fs::remove_dir_all(dir)?;
+
         Ok(())
     }
 }

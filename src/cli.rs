@@ -17,11 +17,11 @@ pub struct Cli {
     pub command: Commands,
 
     /// Verbose mode
-    #[clap(long)]
+    #[clap(long, global = true)]
     pub verbose: bool,
 
     /// API key for the Riot API
-    #[clap(long, default_value = "", value_parser = parse_api_key)]
+    #[clap(long, default_value = "", value_parser = parse_api_key, global = true)]
     pub api_key: String,
 }
 

@@ -41,7 +41,7 @@ pub struct Load {
     pub matches: Option<i32>,
 }
 
-/// Parser for QueueType
+/// Parser for `QueueType`
 fn parse_queue_type(s: &str) -> Result<QueueType, String> {
     match s {
         "solo" => Ok(QueueType::RANKED_SOLO_5x5),
