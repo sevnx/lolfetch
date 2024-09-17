@@ -2,6 +2,8 @@ use crate::cli::LeagueServer;
 use riven::consts::{PlatformRoute, RegionalRoute};
 
 /// Trait that converts a server to a regional route.
+// TODO: Check if useful
+#[allow(unused)]
 pub trait RegionalRouteFromServer {
     fn from(&self) -> RegionalRoute;
 }

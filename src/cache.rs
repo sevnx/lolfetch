@@ -1,6 +1,7 @@
 //! Caching methods for fetched data.
 
 use crate::models::matches::{MatchInfo, MatchMap};
+use anyhow::Context;
 use riven::{consts::PlatformRoute, models::summoner_v4::Summoner};
 use std::{collections::HashMap, fs, io, path::PathBuf};
 
@@ -12,9 +13,6 @@ fn get_cache_dir() -> io::Result<PathBuf> {
             "Cache directory not found",
         ))?
         .join(PathBuf::from("lolfetch"));
-    if !cache_dir.exists() {
-        std::fs::create_dir(&cache_dir)?;
-    }
 
     Ok(cache_dir)
 }
@@ -26,10 +24,6 @@ fn get_summoner_cache_dir(summoner: &Summoner, route: PlatformRoute) -> io::Resu
         .join(PathBuf::from("summoner"))
         .join(PathBuf::from(route.to_string()))
         .join(PathBuf::from(&summoner.puuid));
-
-    if !summonner_cache_dir.exists() {
-        std::fs::create_dir_all(&summonner_cache_dir)?;
-    }
 
     Ok(summonner_cache_dir)
 }
@@ -52,7 +46,14 @@ impl Cache {
     }
 
     pub fn load_cache(summoner: Summoner, route: PlatformRoute) -> anyhow::Result<Self> {
+        info!("Loading cache for summoner");
+
         let cache_dir = get_summoner_cache_dir(&summoner, route)?;
+
+        if !cache_dir.exists() {
+            return Ok(Self::new(summoner, route));
+        }
+
         let file_path = cache_dir.join("matches.json");
 
         if !file_path.exists() {
@@ -89,7 +90,12 @@ impl Cache {
     pub fn save(self) -> anyhow::Result<Vec<MatchInfo>> {
         let serialized = serde_json::to_string(&self.match_info)?;
 
-        let file_path = get_summoner_cache_dir(&self.summoner, self.route)?.join("matches.json");
+        let dir = get_summoner_cache_dir(&self.summoner, self.route)?;
+
+        if !dir.exists() {
+            fs::create_dir_all(&dir)?;
+        }
+        let file_path = dir.join("matches.json");
         if file_path.exists() {
             fs::remove_file(&file_path)?;
         }
@@ -105,18 +111,28 @@ impl Cache {
 
     /// Clears the cache
     pub fn clear(summoner: Option<(Summoner, PlatformRoute)>) -> anyhow::Result<()> {
-        let dir = match summoner {
+        match summoner {
             Some(summoner) => {
-                info!("Clearing cache for {:?}", summoner.0);
-                get_summoner_cache_dir(&summoner.0, summoner.1)?
+                let dir = get_summoner_cache_dir(&summoner.0, summoner.1)?;
+                if dir.exists() {
+                    info!("Clearing cache for summoner");
+                    fs::remove_dir_all(dir).context("Failed to clear cache")
+                } else {
+                    warn!("Cache directory does not exist for summoner");
+                    Ok(())
+                }
             }
             None => {
                 info!("Clearing cache for all summoners");
-                get_cache_dir()?
+                let dir = get_cache_dir()?;
+                if dir.exists() {
+                    info!("Clearing cache");
+                    fs::remove_dir_all(dir).context("Failed to clear cache")
+                } else {
+                    warn!("Cache directory does not exist");
+                    Ok(())
+                }
             }
-        };
-        fs::remove_dir_all(dir)?;
-
-        Ok(())
+        }
     }
 }

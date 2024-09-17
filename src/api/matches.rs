@@ -1,6 +1,7 @@
 //! League of Legends match data.
 
 use crate::{
+    api::tooling::{ranked_schedule::get_split_from_patch, static_data::get_latest_patch},
     cache,
     config::{self, Mode},
     models::matches::MatchInfo,
@@ -98,6 +99,7 @@ pub enum FetcherError {
 
 pub trait Fetcher {
     /// Fetches the recent matches of a summoner.
+    /// Only fetches matches of the current patch
     async fn fetch_recent_matches(
         &self,
         summoner: &Summoner,
@@ -133,6 +135,13 @@ impl Fetcher for RiotApi {
 
                 if is_remake(&match_info) {
                     warn!("Ignoring remake match {id}");
+                    continue;
+                }
+
+                if get_split_from_patch(&match_info.info.game_version).unwrap()
+                    != get_split_from_patch(get_latest_patch().await).unwrap()
+                {
+                    warn!("Ignoring match because of patch");
                     continue;
                 }
 

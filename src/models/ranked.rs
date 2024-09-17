@@ -5,6 +5,7 @@ use riven::{
 
 #[derive(Debug)]
 pub struct RankedInfo {
+    #[allow(unused)] // TODO: Check if useful
     pub queue: QueueType,
     pub tier: Tier,
     pub division: Option<Division>,
