@@ -3,7 +3,7 @@
 use crate::{
     api::tooling::{ranked_schedule::get_split_from_patch, static_data::get_latest_patch},
     cache,
-    config::{self, Mode},
+    config::Mode,
     models::matches::MatchInfo,
 };
 use riven::{
@@ -38,18 +38,34 @@ impl Retriever for RiotApi {
         count: i32,
         queue: Option<Queue>,
     ) -> Result<Vec<String>, riven::RiotApiError> {
-        self.match_v5()
-            .get_match_ids_by_puuid(
-                route,
-                &summoner.puuid,
-                Some(count),
-                None,
-                queue,
-                None,
-                None,
-                None,
-            )
-            .await
+        const MAX_MATCHES_PER_REQUEST: i32 = 100;
+
+        let mut match_ids = Vec::new();
+
+        let mut remaining = count;
+        while remaining > 0 {
+            let current_count = remaining.min(MAX_MATCHES_PER_REQUEST);
+
+            let ids = self
+                .match_v5()
+                .get_match_ids_by_puuid(
+                    route,
+                    &summoner.puuid,
+                    Some(current_count),
+                    None,
+                    queue,
+                    None,
+                    Some(match_ids.len() as i32),
+                    None,
+                )
+                .await?;
+
+            match_ids.extend(ids);
+
+            remaining -= current_count;
+        }
+
+        Ok(match_ids)
     }
 }
 
@@ -65,7 +81,7 @@ pub struct MatchCriteria {
 }
 
 impl Mode {
-    const fn to_match_criteria(&self) -> Option<MatchCriteria> {
+    pub const fn to_match_criteria(&self) -> Option<MatchCriteria> {
         match self {
             Self::Ranked(ref ranked) => Some(MatchCriteria {
                 count: ranked.games,
@@ -92,9 +108,6 @@ impl Mode {
 pub enum FetcherError {
     #[error("Failed to retrieve matches: {0}")]
     FetchError(#[from] riven::RiotApiError),
-
-    #[error("Invalid mode for fetching matches")]
-    InvalidMode,
 }
 
 pub trait Fetcher {
@@ -104,8 +117,8 @@ pub trait Fetcher {
         &self,
         summoner: &Summoner,
         route: RegionalRoute,
-        config: &config::Mode,
         cache: &cache::Cache,
+        criteria: &MatchCriteria,
     ) -> Result<Option<Vec<MatchInfo>>, FetcherError>;
 }
 
@@ -114,13 +127,9 @@ impl Fetcher for RiotApi {
         &self,
         summoner: &Summoner,
         route: RegionalRoute,
-        config: &config::Mode,
         cache: &cache::Cache,
+        criteria: &MatchCriteria,
     ) -> Result<Option<Vec<MatchInfo>>, FetcherError> {
-        let criteria = config
-            .to_match_criteria()
-            .ok_or(FetcherError::InvalidMode)?;
-
         let ids = self
             .get_recent_matches_ids(summoner, route, criteria.count, criteria.queue)
             .await?;

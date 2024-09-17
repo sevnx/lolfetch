@@ -62,12 +62,18 @@ impl Fetcher for RiotApi {
             .fetch_rank(&summoner, QueueType::RANKED_SOLO_5x5, config)
             .await?;
 
+        // TODO: Handle error better
+        let criteria = config
+            .mode
+            .to_match_criteria()
+            .ok_or(anyhow::anyhow!("Invalid mode for fetching matches"))?;
+
         let matches = self
             .fetch_recent_matches(
                 &summoner,
                 config.account.server.to_regional(),
-                &config.mode,
                 &cache,
+                &criteria,
             )
             .await?;
 

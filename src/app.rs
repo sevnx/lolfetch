@@ -45,30 +45,34 @@ async fn handle_display(api: &RiotApi, config: cli::lolfetch::Lolfetch) -> Resul
 
 async fn handle_cache(api: &RiotApi, config: cli::cache::Cache) -> Result<()> {
     match config.action {
-        CacheAction::Clear(config) => match config.summoner {
-            Some(summoner_config) => {
-                match api.fetch_summoner(&summoner_config.clone().into()).await {
-                    Ok(summoner) => {
-                        cache::Cache::clear(Some((summoner, summoner_config.server.into())))
-                    }
-                    Err(e) => match e {
-                        account::FetcherError::PuuidError(PuuidFetchError::AccountNotFound) => {
-                            anyhow::bail!("Riot ID not found");
-                        }
-                        account::FetcherError::SummonerNotFound => {
-                            anyhow::bail!("The summoner was found but not on the given server")
-                        }
-                        account::FetcherError::PuuidError(PuuidFetchError::ApiError(e))
-                        | account::FetcherError::FetchError(e) => {
-                            anyhow::bail!("Error fetching account: {e}");
-                        }
-                    },
-                }
-            }
-            None => cache::Cache::clear(None),
-        },
-        CacheAction::Load(_) => {
-            todo!()
-        }
+        CacheAction::Clear(config) => handle_cache_clear(api, config).await,
+        CacheAction::Load(config) => handle_cache_load(api, config).await,
     }
+}
+
+async fn handle_cache_clear(api: &RiotApi, config: cli::cache::Clear) -> Result<()> {
+    match config.summoner {
+        Some(summoner_config) => match api.fetch_summoner(&summoner_config.clone().into()).await {
+            Ok(summoner) => cache::Cache::clear(Some((summoner, summoner_config.server.into()))),
+            Err(e) => match e {
+                account::FetcherError::PuuidError(PuuidFetchError::AccountNotFound) => {
+                    anyhow::bail!("Riot ID not found");
+                }
+                account::FetcherError::SummonerNotFound => {
+                    anyhow::bail!("The summoner was found but not on the given server")
+                }
+                account::FetcherError::PuuidError(PuuidFetchError::ApiError(e))
+                | account::FetcherError::FetchError(e) => {
+                    anyhow::bail!("Error fetching account: {e}");
+                }
+            },
+        },
+        None => cache::Cache::clear(None),
+    }
+}
+
+async fn handle_cache_load(api: &RiotApi, config: cli::cache::Load) -> Result<()> {
+    let summoner = api.fetch_summoner(&config.summoner.clone().into()).await?;
+
+    Ok(())
 }
