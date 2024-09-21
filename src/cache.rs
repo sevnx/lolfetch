@@ -5,8 +5,8 @@ use anyhow::Context;
 use riven::{consts::PlatformRoute, models::summoner_v4::Summoner};
 use std::{
     collections::HashMap,
-    fs::{self, create_dir_all},
-    io::{self, Read, Write},
+    fs::{self, create_dir_all, OpenOptions},
+    io::{self, Read, Seek, SeekFrom, Write},
     path::PathBuf,
 };
 
@@ -59,30 +59,38 @@ impl Cache {
         info!("Loading cache for summoner");
 
         let cache_dir = get_summoner_cache_dir(&summoner, route)?;
-        let file_path = cache_dir.join("matches.json");
-        if !file_path.exists() {
-            if !cache_dir.exists() {
-                create_dir_all(&cache_dir)?;
-            }
-            let cache_file_lock = fs::File::create(&file_path)?;
-
-            return Ok(Self::new(cache_file_lock));
+        if !cache_dir.exists() {
+            create_dir_all(&cache_dir)?;
         }
 
-        let mut file = fs::File::open(&file_path)?;
+        let file_path = cache_dir.join("matches.json");
+
+        let mut file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .truncate(false)
+            .open(&file_path)?;
+
+        if file.metadata()?.len() == 0 {
+            return Ok(Self::new(file));
+        }
+
         let mut cache_str = String::new();
         file.read_to_string(&mut cache_str)?;
 
-        fs::remove_file(&file_path)?;
-        Ok(
-            match serde_json::from_str::<HashMap<MatchId, MatchInfo>>(&cache_str) {
-                Ok(cache) => Self {
-                    match_info: cache,
-                    cache_file_lock: file,
-                },
-                Err(_) => Self::new(file),
-            },
-        )
+        let cache = match serde_json::from_str::<HashMap<MatchId, MatchInfo>>(&cache_str) {
+            Ok(cache) => cache,
+            Err(err) => {
+                warn!("Failed to deserialize cache: {:?}", err);
+                HashMap::new()
+            }
+        };
+
+        Ok(Self {
+            match_info: cache,
+            cache_file_lock: file,
+        })
     }
 
     pub async fn insert(
@@ -120,11 +128,30 @@ impl Cache {
 
     /// Saves the cache to storage, and returns its content.
     pub fn save_to_file(mut self) -> anyhow::Result<Vec<MatchInfo>> {
-        let serialized = serde_json::to_string(&self.match_info)?;
+        let serialized =
+            serde_json::to_string(&self.match_info).context("Failed to serialize cache")?;
 
-        self.cache_file_lock.write_all(serialized.as_bytes())?;
-        self.cache_file_lock.sync_all()?;
+        // Clear the file
+        self.cache_file_lock
+            .set_len(0)
+            .context("Failed to clear cache file")?;
+        self.cache_file_lock
+            .seek(SeekFrom::Start(0))
+            .context("Failed to seek to start of cache file")?;
+
+        // Write the new cache
+        self.cache_file_lock
+            .write_all(serialized.as_bytes())
+            .context("Failed to write cache file")?;
+        self.cache_file_lock
+            .flush()
+            .context("Failed to flush cache file")?;
+        self.cache_file_lock
+            .sync_all()
+            .context("Failed to sync cache file")?;
         drop(self.cache_file_lock);
+
+        info!("Saved cache to file");
 
         let mut match_vec: Vec<MatchInfo> = self.match_info.into_values().collect();
 
