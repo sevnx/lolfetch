@@ -40,7 +40,7 @@ pub struct Data {
     /// Matches.
     pub matches: Option<Vec<MatchInfo>>,
     /// Champion masteries.
-    pub masteries: Option<Vec<champion_mastery_v4::ChampionMastery>>,
+    pub masteries: Vec<champion_mastery_v4::ChampionMastery>,
     /// Image URL.
     pub image_url: String,
 }
@@ -69,26 +69,36 @@ impl Fetcher for RiotApi {
             .to_match_criteria()
             .ok_or(anyhow::anyhow!("Invalid mode for fetching matches"))?;
 
-        let matches = self
+        let matches = match self
             .fetch_recent_matches(
                 &summoner,
                 config.account.server.to_regional(),
                 &cache,
                 &criteria,
             )
-            .await?;
+            .await?
+        {
+            Some(matches) => matches,
+            None => {
+                anyhow::bail!("The summoner does not have any matches to display");
+            }
+        };
 
-        let masteries = self
+        let masteries = match self
             .fetch_mastery(&summoner, config.account.server, &config.mode)
-            .await?;
+            .await?
+        {
+            Some(masteries) => masteries,
+            None => {
+                anyhow::bail!("The summoner has no masteries");
+            }
+        };
 
-        if let Some(matches) = matches {
-            for info in matches {
-                match cache.insert(info.id.clone(), info).await {
-                    Ok(_) => {}
-                    Err(e) => {
-                        warn!("Failed to insert match into cache: {e:?}");
-                    }
+        for info in matches {
+            match cache.insert(info.id.clone(), info).await {
+                Ok(_) => {}
+                Err(e) => {
+                    warn!("Failed to insert match into cache: {e:?}");
                 }
             }
         }
@@ -97,18 +107,19 @@ impl Fetcher for RiotApi {
 
         info!("Data fetched successfully");
 
-        // TODO: CLEAN THIS UP
         let image_url = match config.image.clone() {
             Image::Default => match config.mode {
-                Mode::Ranked(_) | Mode::Lolfetch(_) => {
-                    ranked.as_ref().unwrap().tier.unwrap().get_icon_url().await
-                }
+                Mode::Ranked(_) | Mode::Lolfetch(_) => match ranked.as_ref() {
+                    Some(ranked) => match ranked.tier {
+                        Some(tier) => tier.get_icon_url().await,
+                        None => anyhow::bail!("No tier found"),
+                    },
+                    None => anyhow::bail!("No ranked data found"),
+                },
                 Mode::Mastery(_) => {
                     masteries
-                        .as_ref()
-                        .unwrap()
                         .first()
-                        .unwrap()
+                        .expect("There should be at least one mastery")
                         .champion_id
                         .get_icon_url()
                         .await
@@ -116,20 +127,26 @@ impl Fetcher for RiotApi {
                 Mode::RecentMatches(_) => {
                     matches
                         .first()
-                        .unwrap()
+                        .expect("There should be at least one match")
                         .info
                         .participants
                         .iter()
                         .find(|p| p.puuid == summoner.puuid)
-                        .unwrap()
+                        .expect("Summoner should be in the match")
                         .champion()
-                        .unwrap()
+                        .expect("Champion should be found")
                         .get_icon_url()
                         .await
                 }
                 Mode::Custom(_) => anyhow::bail!("Custom mode cannot use default image"),
             },
-            Image::RankIcon => ranked.as_ref().unwrap().tier.unwrap().get_icon_url().await,
+            Image::RankIcon => match ranked.as_ref() {
+                Some(ranked) => match ranked.tier {
+                    Some(tier) => tier.get_icon_url().await,
+                    None => anyhow::bail!("No tier found when ranked icon was requested"),
+                },
+                None => anyhow::bail!("No ranked data found when ranked icon was requested"),
+            },
             Image::ChampionIcon(champ) => champ.get_icon_url().await,
             Image::SummonerIcon => summoner.get_icon_url().await,
             Image::Custom(url) => url,

@@ -11,19 +11,21 @@ pub struct MatchHistory {
 }
 
 impl MatchHistory {
-    pub fn new(
-        matches: &[match_v5::Info],
-        summoner: &Summoner,
-        max_games: i32,
-    ) -> Result<Self, MatchPlayerInfoError> {
+    pub fn new(matches: &[match_v5::Info], summoner: &Summoner, max_games: i32) -> Self {
         let match_infos = matches
             .iter()
             .take(max_games as usize)
-            .map(|game| MatchPlayerInfo::from_match_info(game, summoner))
-            .collect::<Result<Vec<_>, _>>()?;
-        Ok(Self {
+            .map(|game| {
+                MatchPlayerInfo::from_match_info(game, summoner).expect(
+                    "
+            Failed to get match player info",
+                )
+            })
+            .collect::<Vec<_>>();
+
+        Self {
             matches: match_infos,
-        })
+        }
     }
 }
 
@@ -50,7 +52,10 @@ impl DisplayableSection for MatchHistory {
             match_body.push_unformatted_str(&format!(
                 " - {} - {:<12}",
                 match_info.team_position,
-                match_info.champion.name().unwrap()
+                match_info
+                    .champion
+                    .name()
+                    .expect("Failed to get champion name")
             ));
 
             match_body.push_unformatted_str(&format!(" - {:8} - ", match_info.kda.to_string()));

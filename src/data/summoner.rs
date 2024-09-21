@@ -52,7 +52,11 @@ impl DisplayableSection for Summoner {
         if let Some(ranked) = &self.ranked {
             // Rank / LP
             let mut ranked_string = ColoredString::new();
-            let rank_color = ranked.tier.get_rank_color().unwrap();
+            let rank_color = match ranked.tier.get_rank_color() {
+                Some(color) => color,
+                // Default to white if the rank color is not found.
+                None => termcolor::Color::White,
+            };
             ranked_string.push_unformatted_str("Rank: ");
             ranked_string.push_str(&format!("{}", ranked.tier), Some(rank_color), None);
             match ranked.division {
@@ -73,7 +77,12 @@ impl DisplayableSection for Summoner {
             ));
 
             winrate_string.push_str(
-                &format!(" {:.1}%", ranked.get_winrate().unwrap()),
+                &format!(
+                    " {:.1}%",
+                    ranked
+                        .get_winrate()
+                        .expect("The player does not have a winrate (so no games)")
+                ),
                 Some(rank_color),
                 None,
             );

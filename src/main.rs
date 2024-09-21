@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate log;
 
-use anyhow::Result;
+use anyhow::Context;
 use app::App;
 use clap::Parser;
 
@@ -17,7 +17,8 @@ mod logging;
 mod models;
 
 #[tokio::main]
-async fn main() -> Result<()> {
-    dotenv::dotenv()?;
+async fn main() -> anyhow::Result<()> {
+    dotenv::dotenv().context("Failed to load .env file")?;
+
     App::run(cli::Cli::parse()).await
 }

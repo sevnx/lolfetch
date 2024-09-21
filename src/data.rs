@@ -22,6 +22,9 @@ pub mod summoner;
 pub enum ProcessingError {
     #[error("Failed to fetch image")]
     ImageFetchError(#[from] lolfetch_ascii::ArtProcessingError),
+
+    #[error("Failed to process data")]
+    IncorrectData(String),
 }
 
 pub struct ApplicationData {
@@ -39,14 +42,16 @@ impl ApplicationData {
                 // Name + Ranked champion stats + Recent Matches
                 let ranked_summoner = Summoner::new(&config.account.riot_id, data.ranked);
 
-                let matches: Vec<match_v5::Info> =
-                    data.matches.unwrap().into_iter().map(|m| m.info).collect();
+                let matches: Vec<match_v5::Info> = match data.matches {
+                    Some(matches) => matches.into_iter().map(|m| m.info).collect(),
+                    None => return Err(ProcessingError::IncorrectData("No matches found".into())),
+                };
 
                 let champions =
-                    RecentChampionInfo::new(&matches, &data.summoner, ranked.top_champions)
-                        .unwrap();
+                    RecentChampionInfo::new(&matches, &data.summoner, ranked.top_champions);
+
                 let match_history =
-                    MatchHistory::new(&matches, &data.summoner, ranked.recent_matches).unwrap();
+                    MatchHistory::new(&matches, &data.summoner, ranked.recent_matches);
 
                 sections.push(DisplayableSectionKind::Summoner(ranked_summoner));
                 sections.push(DisplayableSectionKind::MatchHistory(match_history));
@@ -56,7 +61,7 @@ impl ApplicationData {
                 // Name + Masteries
 
                 let summoner = Summoner::new(&config.account.riot_id, None);
-                let mastery = Mastery::new(data.masteries.unwrap(), mastery.mastery_champions);
+                let mastery = Mastery::new(data.masteries, mastery.mastery_champions);
 
                 sections.push(DisplayableSectionKind::Summoner(summoner));
                 sections.push(DisplayableSectionKind::Mastery(mastery));
@@ -65,11 +70,13 @@ impl ApplicationData {
                 // Name + Recent Matches
                 let ranked_summoner = Summoner::new(&config.account.riot_id, data.ranked);
 
-                let matches: Vec<match_v5::Info> =
-                    data.matches.unwrap().into_iter().map(|m| m.info).collect();
+                let matches: Vec<match_v5::Info> = match data.matches {
+                    Some(matches) => matches.into_iter().map(|m| m.info).collect(),
+                    None => return Err(ProcessingError::IncorrectData("No matches found".into())),
+                };
 
                 let match_history =
-                    MatchHistory::new(&matches, &data.summoner, recent.recent_matches).unwrap();
+                    MatchHistory::new(&matches, &data.summoner, recent.recent_matches);
 
                 sections.push(DisplayableSectionKind::Summoner(ranked_summoner));
                 sections.push(DisplayableSectionKind::MatchHistory(match_history));

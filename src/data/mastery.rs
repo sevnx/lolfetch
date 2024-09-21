@@ -26,7 +26,10 @@ impl DisplayableSection for Mastery {
             let mastery_str = format!(
                 "{}. {:<12} - Level {} - {} points",
                 i + 1,
-                mastery.champion_id.name().unwrap(),
+                mastery
+                    .champion_id
+                    .name()
+                    .expect("Failed to get champion name"),
                 mastery.champion_level,
                 mastery.champion_points
             );

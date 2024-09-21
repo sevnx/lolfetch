@@ -1,6 +1,9 @@
 use crate::{
     display::DisplayableSection,
-    models::{champion_stats::GameStats, matches::MatchPlayerInfo},
+    models::{
+        champion_stats::GameStats,
+        matches::{MatchPlayerInfo, MatchPlayerInfoError},
+    },
 };
 use anyhow::Result;
 use lolfetch_color::ColoredString;
@@ -21,11 +24,12 @@ pub struct RecentChampionInfo {
 }
 
 impl RecentChampionInfo {
-    pub fn new(matches: &[match_v5::Info], summoner: &Summoner, max_champs: i32) -> Result<Self> {
+    pub fn new(matches: &[match_v5::Info], summoner: &Summoner, max_champs: i32) -> Self {
         let mut stats = HashMap::new();
 
         for game in matches {
-            let match_info = MatchPlayerInfo::from_match_info(game, summoner)?;
+            let match_info = MatchPlayerInfo::from_match_info(game, summoner)
+                .expect("Failed to get match player info");
             let champion_stats = stats.entry(match_info.champion).or_insert(GameStats::new());
             champion_stats.add_game(&match_info);
         }
@@ -33,14 +37,14 @@ impl RecentChampionInfo {
         let mut sorted = stats.into_iter().collect::<Vec<_>>();
         sorted.sort_by(|a, b| b.1.total_games().cmp(&a.1.total_games()));
 
-        Ok(Self {
+        Self {
             stats: sorted
                 .into_iter()
                 .take(max_champs as usize)
                 .map(|(champion, stats)| ChampionStats { champion, stats })
                 .collect(),
             games_processed: matches.len(),
-        })
+        }
     }
 }
 
@@ -69,7 +73,10 @@ impl DisplayableSection for RecentChampionInfo {
 
             champion_body.push_unformatted_str(&format!(
                 "{:<12} - {:.0}% WR - {} - {:.1} CS/M - {} Played",
-                champion_stats.champion.name().unwrap(),
+                champion_stats
+                    .champion
+                    .name()
+                    .expect("Failed to get champion name"),
                 champion_stats.stats.winrate() * 100.0,
                 kda_str,
                 champion_stats.stats.cspm(),

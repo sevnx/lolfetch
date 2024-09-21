@@ -3,7 +3,12 @@
 use crate::models::matches::{MatchInfo, MatchMap};
 use anyhow::Context;
 use riven::{consts::PlatformRoute, models::summoner_v4::Summoner};
-use std::{collections::HashMap, fs, io, path::PathBuf};
+use std::{
+    collections::HashMap,
+    fs::{self, create_dir_all},
+    io::{self, Read, Write},
+    path::PathBuf,
+};
 
 /// Returns the cache directory for lolfetch.
 fn get_cache_dir() -> io::Result<PathBuf> {
@@ -31,9 +36,8 @@ fn get_summoner_cache_dir(summoner: &Summoner, route: PlatformRoute) -> io::Resu
 pub type MatchId = String;
 
 pub struct Cache {
-    summoner: Summoner,
-    route: PlatformRoute,
     match_info: MatchMap,
+    cache_file_lock: fs::File,
 }
 
 #[derive(Debug)]
@@ -44,11 +48,10 @@ pub enum CacheInsertError {
 }
 
 impl Cache {
-    fn new(summoner: Summoner, route: PlatformRoute) -> Self {
+    fn new(cache_file_lock: fs::File) -> Self {
         Self {
-            summoner,
-            route,
             match_info: HashMap::new(),
+            cache_file_lock,
         }
     }
 
@@ -56,27 +59,28 @@ impl Cache {
         info!("Loading cache for summoner");
 
         let cache_dir = get_summoner_cache_dir(&summoner, route)?;
-
-        if !cache_dir.exists() {
-            return Ok(Self::new(summoner, route));
-        }
-
         let file_path = cache_dir.join("matches.json");
-
         if !file_path.exists() {
-            return Ok(Self::new(summoner, route));
+            if !cache_dir.exists() {
+                create_dir_all(&cache_dir)?;
+            }
+            let cache_file_lock = fs::File::create(&file_path)?;
+
+            return Ok(Self::new(cache_file_lock));
         }
 
-        let cache_str = std::fs::read_to_string(&file_path)?;
+        let mut file = fs::File::open(&file_path)?;
+        let mut cache_str = String::new();
+        file.read_to_string(&mut cache_str)?;
+
         fs::remove_file(&file_path)?;
         Ok(
             match serde_json::from_str::<HashMap<MatchId, MatchInfo>>(&cache_str) {
                 Ok(cache) => Self {
-                    summoner,
-                    route,
                     match_info: cache,
+                    cache_file_lock: file,
                 },
-                Err(_) => Self::new(summoner, route),
+                Err(_) => Self::new(file),
             },
         )
     }
@@ -115,19 +119,12 @@ impl Cache {
     }
 
     /// Saves the cache to storage, and returns its content.
-    pub fn save_to_file(self) -> anyhow::Result<Vec<MatchInfo>> {
+    pub fn save_to_file(mut self) -> anyhow::Result<Vec<MatchInfo>> {
         let serialized = serde_json::to_string(&self.match_info)?;
 
-        let dir = get_summoner_cache_dir(&self.summoner, self.route)?;
-
-        if !dir.exists() {
-            fs::create_dir_all(&dir)?;
-        }
-        let file_path = dir.join("matches.json");
-        if file_path.exists() {
-            fs::remove_file(&file_path)?;
-        }
-        fs::write(&file_path, serialized)?;
+        self.cache_file_lock.write_all(serialized.as_bytes())?;
+        self.cache_file_lock.sync_all()?;
+        drop(self.cache_file_lock);
 
         let mut match_vec: Vec<MatchInfo> = self.match_info.into_values().collect();
 

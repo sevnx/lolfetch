@@ -18,16 +18,17 @@ pub struct App {}
 
 impl App {
     pub async fn run(cli: Cli) -> Result<()> {
+        // Initialize logging
         if cli.verbose {
             match logging::setup() {
                 Ok(_) => info!("Logging initialized"),
                 Err(e) => eprintln!("Error initializing logging: {}", e),
             }
         }
+
         info!("Starting lolfetch");
 
         let api = RiotApi::new(RiotApiConfig::with_key(&cli.api_key));
-
         match cli.command {
             Commands::Display(config) => handle_display(&api, config).await,
             Commands::Cache(cache) => handle_cache(&api, cache).await,

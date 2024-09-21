@@ -97,6 +97,8 @@ impl Fetcher for riven::RiotApi {
         &self,
         config: &config::Account,
     ) -> Result<summoner_v4::Summoner, FetcherError> {
+        info!("Fetching summoner data");
+
         let puuid = self.get_puuid(&config.riot_id).await?;
 
         match self.summoner_v4().get_by_puuid(config.server, &puuid).await {

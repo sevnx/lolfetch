@@ -30,7 +30,8 @@ impl Config {
                 riot_id: value.summoner.riot_id,
                 server: value.summoner.server.into(),
             },
-            image: Self::parse_image_config(value.display_config)?,
+            image: Self::parse_image_config(value.display_config)
+                .context("Failed to parse image")?,
             mode: Self::parse_mode_config(&value.info_config),
         })
     }

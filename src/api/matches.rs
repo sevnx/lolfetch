@@ -133,8 +133,16 @@ impl Fetcher for RiotApi {
             if !cache.contains(&id) {
                 info!("Fetching match {id}");
 
-                let match_info = self.match_v5().get_match(route, &id).await?.unwrap();
-                let timeline = self.match_v5().get_timeline(route, &id).await?.unwrap();
+                let match_info = self
+                    .match_v5()
+                    .get_match(route, &id)
+                    .await?
+                    .expect("Match not found");
+                let timeline = self
+                    .match_v5()
+                    .get_timeline(route, &id)
+                    .await?
+                    .expect("Timeline not found");
 
                 let info = MatchInfo {
                     id: match_info.metadata.match_id.clone(),

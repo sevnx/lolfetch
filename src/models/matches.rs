@@ -28,8 +28,9 @@ impl MatchInfo {
     }
 
     pub async fn is_current_split(&self) -> bool {
-        get_split_from_patch(&self.info.game_version).unwrap()
-            == get_split_from_patch(get_latest_patch().await).unwrap()
+        get_split_from_patch(&self.info.game_version).expect("Failed to get split from patch")
+            == get_split_from_patch(get_latest_patch().await)
+                .expect("Failed to get split from patch")
     }
 }
 
