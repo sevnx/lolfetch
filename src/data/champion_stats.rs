@@ -1,11 +1,7 @@
 use crate::{
     display::DisplayableSection,
-    models::{
-        champion_stats::GameStats,
-        matches::{MatchPlayerInfo, MatchPlayerInfoError},
-    },
+    models::{champion_stats::GameStats, matches::MatchPlayerInfo},
 };
-use anyhow::Result;
 use lolfetch_color::ColoredString;
 use riven::{
     consts::Champion,
@@ -46,6 +42,18 @@ impl RecentChampionInfo {
             games_processed: matches.len(),
         }
     }
+
+    pub fn max_champion_name_width(&self) -> Option<usize> {
+        self.stats
+            .iter()
+            .map(|s| {
+                s.champion
+                    .name()
+                    .expect("Failed to get champion name")
+                    .len()
+            })
+            .max()
+    }
 }
 
 impl DisplayableSection for RecentChampionInfo {
@@ -61,6 +69,8 @@ impl DisplayableSection for RecentChampionInfo {
 
         let mut stat_iter = self.stats.iter();
 
+        let max_width = self.max_champion_name_width().expect("No matches found");
+
         for _ in 0..5 {
             let Some(champion_stats) = stat_iter.next() else {
                 break;
@@ -72,7 +82,7 @@ impl DisplayableSection for RecentChampionInfo {
                 .map_or_else(|| "PERFECT".to_string(), |kda| format!("{kda:.1} KDA"));
 
             champion_body.push_unformatted_str(&format!(
-                "{:<12} - {:.0}% WR - {} - {:.1} CS/M - {} Played",
+                "{:<width$} - {:3.0}% WR - {} - {:.1} CS/M - {} Played",
                 champion_stats
                     .champion
                     .name()
@@ -81,6 +91,7 @@ impl DisplayableSection for RecentChampionInfo {
                 kda_str,
                 champion_stats.stats.cspm(),
                 champion_stats.stats.total_games(),
+                width = max_width
             ));
 
             body.push(champion_body);

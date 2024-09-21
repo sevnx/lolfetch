@@ -1,6 +1,6 @@
 use crate::display::DisplayableSection;
 use crate::models::champion_stats::GameStats;
-use crate::models::matches::{GameResult, MatchPlayerInfo, MatchPlayerInfoError};
+use crate::models::matches::{GameResult, MatchPlayerInfo};
 use lolfetch_color::ColoredString;
 use riven::models::match_v5;
 use riven::models::summoner_v4::Summoner;
@@ -27,6 +27,18 @@ impl MatchHistory {
             matches: match_infos,
         }
     }
+
+    pub fn max_champion_name_width(&self) -> Option<usize> {
+        self.matches
+            .iter()
+            .map(|m| {
+                m.champion
+                    .name()
+                    .expect("Failed to get champion name")
+                    .len()
+            })
+            .max()
+    }
 }
 
 impl DisplayableSection for MatchHistory {
@@ -36,6 +48,8 @@ impl DisplayableSection for MatchHistory {
 
     fn body(&self) -> Vec<ColoredString> {
         let mut body = Vec::new();
+
+        let max_width = self.max_champion_name_width().expect("No matches found");
 
         for match_info in &self.matches {
             let mut match_body = ColoredString::new();
@@ -50,12 +64,13 @@ impl DisplayableSection for MatchHistory {
             }
 
             match_body.push_unformatted_str(&format!(
-                " - {} - {:<12}",
+                " - {} - {:<width$}",
                 match_info.team_position,
                 match_info
                     .champion
                     .name()
-                    .expect("Failed to get champion name")
+                    .expect("Failed to get champion name"),
+                width = max_width
             ));
 
             match_body.push_unformatted_str(&format!(" - {:8} - ", match_info.kda.to_string()));
@@ -63,7 +78,7 @@ impl DisplayableSection for MatchHistory {
             let game_stats = GameStats::from(match_info);
 
             if let Some(kda) = game_stats.kda() {
-                match_body.push_unformatted_str(&format!("{kda:.2} KDA"));
+                match_body.push_unformatted_str(&format!("{kda:.1} KDA"));
             } else {
                 match_body.push_unformatted_str("PERFECT");
             }

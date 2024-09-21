@@ -61,7 +61,10 @@ impl ApplicationData {
                 // Name + Masteries
 
                 let summoner = Summoner::new(&config.account.riot_id, None);
-                let mastery = Mastery::new(data.masteries, mastery.mastery_champions);
+                let mastery = Mastery::new(
+                    data.masteries.expect("Masteries should be fetched"),
+                    mastery.mastery_champions,
+                );
 
                 sections.push(DisplayableSectionKind::Summoner(summoner));
                 sections.push(DisplayableSectionKind::Mastery(mastery));

@@ -40,7 +40,7 @@ pub struct Data {
     /// Matches.
     pub matches: Option<Vec<MatchInfo>>,
     /// Champion masteries.
-    pub masteries: Vec<champion_mastery_v4::ChampionMastery>,
+    pub masteries: Option<Vec<champion_mastery_v4::ChampionMastery>>,
     /// Image URL.
     pub image_url: String,
 }
@@ -84,15 +84,9 @@ impl Fetcher for RiotApi {
             }
         };
 
-        let masteries = match self
+        let masteries = self
             .fetch_mastery(&summoner, config.account.server, &config.mode)
-            .await?
-        {
-            Some(masteries) => masteries,
-            None => {
-                anyhow::bail!("The summoner has no masteries");
-            }
-        };
+            .await?;
 
         for info in matches {
             match cache.insert(info.id.clone(), info).await {
@@ -118,6 +112,8 @@ impl Fetcher for RiotApi {
                 },
                 Mode::Mastery(_) => {
                     masteries
+                        .as_ref()
+                        .expect("Masteries should be fetched")
                         .first()
                         .expect("There should be at least one mastery")
                         .champion_id

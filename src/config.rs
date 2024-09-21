@@ -120,6 +120,7 @@ pub enum Mode {
     RecentMatches(RecentMatches),
 
     /// Displays information in a `neofetch`-like format
+    #[allow(unused)] // TODO: Implement this mode
     Lolfetch(Lolfetch),
 
     /// Displays custom information
