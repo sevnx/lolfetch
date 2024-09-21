@@ -1,14 +1,9 @@
 //! League of Legends match data.
 
-use crate::{
-    api::tooling::{ranked_schedule::get_split_from_patch, static_data::get_latest_patch},
-    cache,
-    config::Mode,
-    models::matches::MatchInfo,
-};
+use crate::{cache, config::Mode, models::matches::MatchInfo};
 use riven::{
     consts::{Queue, RegionalRoute},
-    models::{match_v5::Match, summoner_v4::Summoner},
+    models::summoner_v4::Summoner,
     RiotApi,
 };
 use thiserror::Error;
@@ -25,8 +20,7 @@ trait Retriever {
         &self,
         summoner: &Summoner,
         route: RegionalRoute,
-        count: i32,
-        queue: Option<Queue>,
+        match_criteria: &MatchCriteria,
     ) -> Result<Vec<String>, riven::RiotApiError>;
 }
 
@@ -35,14 +29,13 @@ impl Retriever for RiotApi {
         &self,
         summoner: &Summoner,
         route: RegionalRoute,
-        count: i32,
-        queue: Option<Queue>,
+        match_criteria: &MatchCriteria,
     ) -> Result<Vec<String>, riven::RiotApiError> {
         const MAX_MATCHES_PER_REQUEST: i32 = 100;
 
         let mut match_ids = Vec::new();
 
-        let mut remaining = count;
+        let mut remaining = match_criteria.count;
         while remaining > 0 {
             let current_count = remaining.min(MAX_MATCHES_PER_REQUEST);
 
@@ -53,9 +46,9 @@ impl Retriever for RiotApi {
                     &summoner.puuid,
                     Some(current_count),
                     None,
-                    queue,
+                    match_criteria.queue,
                     None,
-                    Some(match_ids.len() as i32),
+                    Some(match_ids.len() as i32 + match_criteria.start_at.unwrap_or(0)),
                     None,
                 )
                 .await?;
@@ -69,15 +62,11 @@ impl Retriever for RiotApi {
     }
 }
 
-const fn is_remake(match_data: &Match) -> bool {
-    const MINUTES_UNTIL_REMAKE: i64 = 3;
-    match_data.info.game_duration < MINUTES_UNTIL_REMAKE * 60
-}
-
 #[derive(Debug, Clone, Copy)]
 pub struct MatchCriteria {
     pub count: i32,
     pub queue: Option<Queue>,
+    pub start_at: Option<i32>,
 }
 
 impl Mode {
@@ -86,18 +75,22 @@ impl Mode {
             Self::Ranked(ref ranked) => Some(MatchCriteria {
                 count: ranked.games,
                 queue: Some(Queue::SUMMONERS_RIFT_5V5_RANKED_SOLO),
+                start_at: None,
             }),
             Self::Lolfetch(ref lolfetch) => Some(MatchCriteria {
                 count: lolfetch.games,
                 queue: None,
+                start_at: None,
             }),
             Self::Mastery(ref mastery) => Some(MatchCriteria {
                 count: mastery.games,
                 queue: None,
+                start_at: None,
             }),
             Self::RecentMatches(ref recent_matches) => Some(MatchCriteria {
                 count: recent_matches.recent_matches,
                 queue: None,
+                start_at: None,
             }),
             Self::Custom(_) => None,
         }
@@ -131,29 +124,16 @@ impl Fetcher for RiotApi {
         criteria: &MatchCriteria,
     ) -> Result<Option<Vec<MatchInfo>>, FetcherError> {
         let ids = self
-            .get_recent_matches_ids(summoner, route, criteria.count, criteria.queue)
+            .get_recent_matches_ids(summoner, route, criteria)
             .await?;
 
         let mut matches = Vec::new();
 
         for id in ids {
             if !cache.contains(&id) {
-                info!("Fetched match {id}");
+                info!("Fetching match {id}");
 
                 let match_info = self.match_v5().get_match(route, &id).await?.unwrap();
-
-                if is_remake(&match_info) {
-                    warn!("Ignoring remake match {id}");
-                    continue;
-                }
-
-                if get_split_from_patch(&match_info.info.game_version).unwrap()
-                    != get_split_from_patch(get_latest_patch().await).unwrap()
-                {
-                    warn!("Ignoring match because of patch");
-                    continue;
-                }
-
                 let timeline = self.match_v5().get_timeline(route, &id).await?.unwrap();
 
                 let info = MatchInfo {
@@ -164,7 +144,7 @@ impl Fetcher for RiotApi {
 
                 matches.push(info);
             } else {
-                info!("Ignoring match {id}");
+                info!("Ignoring match {id} : cached");
             }
         }
 

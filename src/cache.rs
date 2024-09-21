@@ -36,6 +36,13 @@ pub struct Cache {
     match_info: MatchMap,
 }
 
+#[derive(Debug)]
+pub enum CacheInsertError {
+    AlreadyExists,
+    Remake,
+    PatchMismatch,
+}
+
 impl Cache {
     fn new(summoner: Summoner, route: PlatformRoute) -> Self {
         Self {
@@ -45,7 +52,7 @@ impl Cache {
         }
     }
 
-    pub fn load_cache(summoner: Summoner, route: PlatformRoute) -> anyhow::Result<Self> {
+    pub fn load_cache_from_file(summoner: Summoner, route: PlatformRoute) -> anyhow::Result<Self> {
         info!("Loading cache for summoner");
 
         let cache_dir = get_summoner_cache_dir(&summoner, route)?;
@@ -74,8 +81,25 @@ impl Cache {
         )
     }
 
-    pub fn insert(&mut self, match_id: MatchId, info: MatchInfo) {
+    pub async fn insert(
+        &mut self,
+        match_id: MatchId,
+        info: MatchInfo,
+    ) -> Result<(), CacheInsertError> {
+        if self.match_info.contains_key(&match_id) {
+            return Err(CacheInsertError::AlreadyExists);
+        }
+
+        if info.is_remake() {
+            return Err(CacheInsertError::Remake);
+        }
+
+        if !info.is_current_split().await {
+            return Err(CacheInsertError::PatchMismatch);
+        }
+
         self.match_info.insert(match_id, info);
+        Ok(())
     }
 
     pub fn contains(&self, match_id: &MatchId) -> bool {
@@ -86,8 +110,12 @@ impl Cache {
         self.match_info.is_empty()
     }
 
+    pub fn len(&self) -> usize {
+        self.match_info.len()
+    }
+
     /// Saves the cache to storage, and returns its content.
-    pub fn save(self) -> anyhow::Result<Vec<MatchInfo>> {
+    pub fn save_to_file(self) -> anyhow::Result<Vec<MatchInfo>> {
         let serialized = serde_json::to_string(&self.match_info)?;
 
         let dir = get_summoner_cache_dir(&self.summoner, self.route)?;

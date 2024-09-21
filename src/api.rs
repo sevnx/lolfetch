@@ -55,7 +55,8 @@ impl Fetcher for RiotApi {
         let summoner = self.fetch_summoner(&config.account).await?;
 
         // Get cached data
-        let mut cache = cache::Cache::load_cache(summoner.clone(), config.account.server)?;
+        let mut cache =
+            cache::Cache::load_cache_from_file(summoner.clone(), config.account.server)?;
 
         // Ranked information.
         let ranked = self
@@ -81,6 +82,21 @@ impl Fetcher for RiotApi {
             .fetch_mastery(&summoner, config.account.server, &config.mode)
             .await?;
 
+        if let Some(matches) = matches {
+            for info in matches {
+                match cache.insert(info.id.clone(), info).await {
+                    Ok(_) => {}
+                    Err(e) => {
+                        warn!("Failed to insert match into cache: {e:?}");
+                    }
+                }
+            }
+        }
+
+        let matches = cache.save_to_file()?;
+
+        info!("Data fetched successfully");
+
         // TODO: CLEAN THIS UP
         let image_url = match config.image.clone() {
             Image::Default => match config.mode {
@@ -99,8 +115,6 @@ impl Fetcher for RiotApi {
                 }
                 Mode::RecentMatches(_) => {
                     matches
-                        .as_ref()
-                        .unwrap()
                         .first()
                         .unwrap()
                         .info
@@ -120,16 +134,6 @@ impl Fetcher for RiotApi {
             Image::SummonerIcon => summoner.get_icon_url().await,
             Image::Custom(url) => url,
         };
-
-        if let Some(matches) = matches {
-            matches
-                .into_iter()
-                .for_each(|info| cache.insert(info.id.clone(), info));
-        }
-
-        let matches = cache.save()?;
-
-        info!("Data fetched successfully");
 
         Ok(Data {
             summoner,

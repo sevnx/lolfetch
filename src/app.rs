@@ -1,6 +1,7 @@
 use crate::{
     api::{
         account::{self, Fetcher as AccountFetcher, PuuidFetchError},
+        matches::{Fetcher, MatchCriteria},
         Fetcher as ApiFetcher,
     },
     cache,
@@ -11,7 +12,7 @@ use crate::{
     logging,
 };
 use anyhow::Result;
-use riven::{RiotApi, RiotApiConfig};
+use riven::{consts::Queue, RiotApi, RiotApiConfig};
 
 pub struct App {}
 
@@ -72,7 +73,82 @@ async fn handle_cache_clear(api: &RiotApi, config: cli::cache::Clear) -> Result<
 }
 
 async fn handle_cache_load(api: &RiotApi, config: cli::cache::Load) -> Result<()> {
-    let summoner = api.fetch_summoner(&config.summoner.clone().into()).await?;
+    const MAX_MATCHES_PER_REQUEST: i32 = 100;
+
+    let account = config.summoner.clone().into();
+    let summoner = api.fetch_summoner(&account).await?;
+
+    let mut cache =
+        cache::Cache::load_cache_from_file(summoner.clone(), config.summoner.server.into())?;
+
+    let mut count = config.matches;
+
+    // This isn't that accurate because remakes are not counted but it's good enough
+    let mut start_at: i32 = cache.len() as i32;
+
+    'game: loop {
+        let matches_query = match count {
+            Some(ref mut c) => {
+                let current_count = *c;
+                let min = if current_count < MAX_MATCHES_PER_REQUEST {
+                    current_count
+                } else {
+                    MAX_MATCHES_PER_REQUEST
+                };
+                *c -= min;
+                min
+            }
+            None => MAX_MATCHES_PER_REQUEST,
+        };
+
+        let match_criteria = MatchCriteria {
+            count: matches_query,
+            queue: Some(Queue::SUMMONERS_RIFT_5V5_RANKED_SOLO),
+            start_at: Some(start_at),
+        };
+
+        // Fetch match ids
+        let matches = api
+            .fetch_recent_matches(
+                &summoner,
+                account.server.to_regional(),
+                &cache,
+                &match_criteria,
+            )
+            .await?;
+
+        // Insert matches into cache
+        match matches {
+            Some(matches) => {
+                for info in matches {
+                    let id = info.id.clone();
+                    match cache.insert(id.clone(), info).await {
+                        Ok(_) => info!("Inserted match {id}"),
+                        Err(e) => match e {
+                            cache::CacheInsertError::AlreadyExists => {
+                                warn!("Match {id} already exists in cache")
+                            }
+                            cache::CacheInsertError::Remake => {
+                                warn!("Match {id} is a remake")
+                            }
+                            cache::CacheInsertError::PatchMismatch => {
+                                warn!("Match {id} is from a different patch");
+                                // This means that we are not in the same season, we can stop here
+                                break 'game;
+                            }
+                        },
+                    }
+                }
+            }
+            // No games found
+            None => break,
+        }
+
+        start_at += matches_query;
+    }
+
+    // Save cache to file
+    cache.save_to_file()?;
 
     Ok(())
 }

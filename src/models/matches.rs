@@ -8,6 +8,8 @@ use riven::{
 use std::{collections::HashMap, fmt};
 use thiserror::Error;
 
+use crate::api::tooling::{ranked_schedule::get_split_from_patch, static_data::get_latest_patch};
+
 pub type MatchId = String;
 pub type MatchMap = HashMap<MatchId, MatchInfo>;
 
@@ -17,6 +19,18 @@ pub struct MatchInfo {
     pub id: MatchId,
     pub info: match_v5::Info,
     pub timeline: Option<match_v5::InfoTimeLine>,
+}
+
+impl MatchInfo {
+    pub fn is_remake(&self) -> bool {
+        const MINUTES_UNTIL_REMAKE: i64 = 3;
+        self.info.game_duration < MINUTES_UNTIL_REMAKE * 60
+    }
+
+    pub async fn is_current_split(&self) -> bool {
+        get_split_from_patch(&self.info.game_version).unwrap()
+            == get_split_from_patch(get_latest_patch().await).unwrap()
+    }
 }
 
 #[derive(Debug, Error)]
