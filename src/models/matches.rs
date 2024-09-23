@@ -65,16 +65,19 @@ pub struct MatchPlayerInfo {
     pub game_result: GameResult,
     /// Position in the team.
     pub team_position: TeamPosition,
+    /// GD@15
+    pub gold_diff_15: Option<i32>,
 }
 
 impl MatchPlayerInfo {
     pub fn from_match_info(
-        match_data: &match_v5::Info,
+        match_data: &MatchInfo,
         summoner: &summoner_v4::Summoner,
     ) -> Result<Self, MatchPlayerInfoError> {
-        let participant = match_data.get_participant(summoner)?;
-        let team = match_data.get_my_team(participant)?;
-        let max_time = match_data.get_max_time()?;
+        let participant = match_data.info.get_participant(summoner)?;
+        let team = match_data.info.get_my_team(participant)?;
+        let max_time = match_data.info.get_max_time()?;
+        let gold_diff = match_data.get_gold_diff(summoner, 60 * 15);
         let game_result = if team.win {
             GameResult::Win
         } else {
@@ -92,7 +95,46 @@ impl MatchPlayerInfo {
             time_played: max_time,
             game_result,
             team_position: participant.team_position.clone().try_into()?,
+            gold_diff_15: gold_diff,
         })
+    }
+}
+
+pub trait GoldDiffGetter {
+    fn get_gold_diff(&self, summoner: &Summoner, seconds: i32) -> Option<i32>;
+}
+
+impl GoldDiffGetter for MatchInfo {
+    fn get_gold_diff(&self, summoner: &Summoner, seconds: i32) -> Option<i32> {
+        let participant = self.info.get_participant(summoner).ok()?;
+        info!("{:?}", participant.team_position);
+        let position = TeamPosition::try_from(participant.team_position.clone()).ok()?;
+
+        let enemy_laner = self.info.participants.iter().find(|p| {
+            p.team_position == position.to_riot_api_string() && p.team_id != participant.team_id
+        })?;
+
+        let frame = self.timeline.as_ref()?.get_frame(seconds)?;
+
+        let frame = frame.participant_frames.clone().unwrap();
+
+        let enemy = frame.get(&enemy_laner.participant_id)?;
+        let me = frame.get(&participant.participant_id)?;
+
+        Some(me.total_gold - enemy.total_gold)
+    }
+}
+
+pub trait FrameGetter {
+    fn get_frame(&self, seconds: i32) -> Option<&match_v5::FramesTimeLine>;
+}
+
+impl FrameGetter for match_v5::InfoTimeLine {
+    fn get_frame(&self, seconds: i32) -> Option<&match_v5::FramesTimeLine> {
+        let sec_timestamp = seconds * 1000;
+        self.frames
+            .iter()
+            .find(|&frame| frame.timestamp > sec_timestamp)
     }
 }
 
@@ -122,6 +164,18 @@ impl TryFrom<String> for TeamPosition {
             "BOTTOM" => Ok(Self::Bot),
             "UTILITY" => Ok(Self::Support),
             _ => Err(TeamPositionError::InvalidPosition),
+        }
+    }
+}
+
+impl TeamPosition {
+    pub fn to_riot_api_string(&self) -> &'static str {
+        match self {
+            Self::Top => "TOP",
+            Self::Jungle => "JUNGLE",
+            Self::Mid => "MIDDLE",
+            Self::Bot => "BOTTOM",
+            Self::Support => "UTILITY",
         }
     }
 }

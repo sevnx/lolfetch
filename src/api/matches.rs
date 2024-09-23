@@ -1,5 +1,7 @@
 //! League of Legends match data.
 
+use std::collections::HashSet;
+
 use crate::{cache, config::Mode, models::matches::MatchInfo};
 use riven::{
     consts::{Queue, RegionalRoute},
@@ -21,7 +23,7 @@ trait Retriever {
         summoner: &Summoner,
         route: RegionalRoute,
         match_criteria: &MatchCriteria,
-    ) -> Result<Vec<String>, riven::RiotApiError>;
+    ) -> Result<HashSet<String>, riven::RiotApiError>;
 }
 
 impl Retriever for RiotApi {
@@ -30,10 +32,12 @@ impl Retriever for RiotApi {
         summoner: &Summoner,
         route: RegionalRoute,
         match_criteria: &MatchCriteria,
-    ) -> Result<Vec<String>, riven::RiotApiError> {
+    ) -> Result<HashSet<String>, riven::RiotApiError> {
         const MAX_MATCHES_PER_REQUEST: i32 = 100;
 
-        let mut match_ids = Vec::new();
+        let mut match_ids: HashSet<String> = HashSet::new();
+
+        info!("Fetching recent matches for {:?}", match_criteria);
 
         let mut remaining = match_criteria.count;
         while remaining > 0 {
@@ -79,7 +83,7 @@ impl Mode {
             }),
             Self::Lolfetch(ref lolfetch) => Some(MatchCriteria {
                 count: lolfetch.games,
-                queue: None,
+                queue: Some(Queue::SUMMONERS_RIFT_5V5_RANKED_SOLO),
                 start_at: None,
             }),
             Self::Mastery(ref mastery) => Some(MatchCriteria {
@@ -89,7 +93,7 @@ impl Mode {
             }),
             Self::RecentMatches(ref recent_matches) => Some(MatchCriteria {
                 count: recent_matches.recent_matches,
-                queue: None,
+                queue: Some(Queue::SUMMONERS_RIFT_5V5_RANKED_SOLO),
                 start_at: None,
             }),
             Self::Custom(_) => None,

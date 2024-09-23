@@ -1,8 +1,7 @@
 use crate::display::DisplayableSection;
 use crate::models::champion_stats::GameStats;
-use crate::models::matches::{GameResult, MatchPlayerInfo};
+use crate::models::matches::{GameResult, MatchInfo, MatchPlayerInfo};
 use lolfetch_color::ColoredString;
-use riven::models::match_v5;
 use riven::models::summoner_v4::Summoner;
 use termcolor::Color;
 
@@ -11,7 +10,7 @@ pub struct MatchHistory {
 }
 
 impl MatchHistory {
-    pub fn new(matches: &[match_v5::Info], summoner: &Summoner, max_games: i32) -> Self {
+    pub fn new(matches: &[MatchInfo], summoner: &Summoner, max_games: i32) -> Self {
         let match_infos = matches
             .iter()
             .take(max_games as usize)
@@ -84,6 +83,20 @@ impl DisplayableSection for MatchHistory {
             }
 
             match_body.push_unformatted_str(&format!(" - {:.1} CS/M", game_stats.cspm()));
+
+            if let Some(gold_diff) = match_info.gold_diff_15 {
+                let color = if gold_diff > 0 {
+                    Some(Color::Green)
+                } else {
+                    Some(Color::Red)
+                };
+
+                match_body.push_unformatted_str(" - GD@15: ");
+                if gold_diff > 0 {
+                    match_body.push_str("+", color, None);
+                }
+                match_body.push_str(&gold_diff.to_string(), color, None);
+            }
 
             body.push(match_body);
         }

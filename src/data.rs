@@ -9,7 +9,6 @@ use champion_stats::RecentChampionInfo;
 use lolfetch_ascii::ColoredArt;
 use mastery::Mastery;
 use match_history::MatchHistory;
-use riven::models::match_v5;
 use summoner::Summoner;
 use thiserror::Error;
 
@@ -42,10 +41,7 @@ impl ApplicationData {
                 // Name + Ranked champion stats + Recent Matches
                 let ranked_summoner = Summoner::new(&config.account.riot_id, data.ranked);
 
-                let matches: Vec<match_v5::Info> = match data.matches {
-                    Some(matches) => matches.into_iter().map(|m| m.info).collect(),
-                    None => return Err(ProcessingError::IncorrectData("No matches found".into())),
-                };
+                let matches = data.matches.unwrap();
 
                 let champions =
                     RecentChampionInfo::new(&matches, &data.summoner, ranked.top_champions);
@@ -73,10 +69,7 @@ impl ApplicationData {
                 // Name + Recent Matches
                 let ranked_summoner = Summoner::new(&config.account.riot_id, data.ranked);
 
-                let matches: Vec<match_v5::Info> = match data.matches {
-                    Some(matches) => matches.into_iter().map(|m| m.info).collect(),
-                    None => return Err(ProcessingError::IncorrectData("No matches found".into())),
-                };
+                let matches = data.matches.unwrap();
 
                 let match_history =
                     MatchHistory::new(&matches, &data.summoner, recent.recent_matches);

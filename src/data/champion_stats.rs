@@ -1,6 +1,9 @@
 use crate::{
     display::DisplayableSection,
-    models::{champion_stats::GameStats, matches::MatchPlayerInfo},
+    models::{
+        champion_stats::GameStats,
+        matches::{MatchInfo, MatchPlayerInfo},
+    },
 };
 use lolfetch_color::ColoredString;
 use riven::{
@@ -20,7 +23,7 @@ pub struct RecentChampionInfo {
 }
 
 impl RecentChampionInfo {
-    pub fn new(matches: &[match_v5::Info], summoner: &Summoner, max_champs: i32) -> Self {
+    pub fn new(matches: &[MatchInfo], summoner: &Summoner, max_champs: i32) -> Self {
         let mut stats = HashMap::new();
 
         for game in matches {
