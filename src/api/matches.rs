@@ -2,7 +2,7 @@
 
 use std::collections::HashSet;
 
-use crate::{cache, config::Mode, models::matches::MatchInfo};
+use crate::{cache, cli::lolfetch::InfoKind, models::matches::MatchInfo};
 use riven::{
     consts::{Queue, RegionalRoute},
     models::summoner_v4::Summoner,
@@ -73,16 +73,11 @@ pub struct MatchCriteria {
     pub start_at: Option<i32>,
 }
 
-impl Mode {
+impl InfoKind {
     pub const fn to_match_criteria(&self) -> Option<MatchCriteria> {
         match self {
             Self::Ranked(ref ranked) => Some(MatchCriteria {
                 count: ranked.games,
-                queue: Some(Queue::SUMMONERS_RIFT_5V5_RANKED_SOLO),
-                start_at: None,
-            }),
-            Self::Lolfetch(ref lolfetch) => Some(MatchCriteria {
-                count: lolfetch.games,
                 queue: Some(Queue::SUMMONERS_RIFT_5V5_RANKED_SOLO),
                 start_at: None,
             }),

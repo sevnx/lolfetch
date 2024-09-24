@@ -6,7 +6,13 @@ use clap::{Parser, ValueEnum};
 use riven::consts::Champion;
 use std::str::FromStr;
 
-/// CLI arguments for the default lolfetch mode
+// Crate modules
+pub mod custom;
+pub mod mastery;
+pub mod ranked;
+pub mod recent_matches;
+
+/// CLI arguments for the default lolfetch mode (display)
 #[derive(Parser, Debug)]
 pub struct Lolfetch {
     /// Summoner information
@@ -18,22 +24,23 @@ pub struct Lolfetch {
     pub display_config: DisplayConfig,
 
     /// Info display options
-    #[command(flatten)]
-    pub info_config: InfoOptions,
+    #[command(subcommand)]
+    pub info_config: InfoKind,
 }
 
+/// Configuration for the image that is displayed
 #[derive(Parser, Debug, Clone)]
 pub struct DisplayConfig {
     /// Image source for the ASCII art
     #[clap(long, default_value = "Default")]
-    pub display: ImageSource,
+    pub image: ImageSource,
 
     /// Name of the champion icon to display
-    #[clap(long, required_if_eq("display", "ChampionIcon"), value_parser = parse_champion)]
+    #[clap(long, required_if_eq("image", "ChampionIcon"), value_parser = parse_champion)]
     pub champion: Option<Champion>,
 
     /// Link to the custom image to display
-    #[clap(long, required_if_eq("display", "Custom"))]
+    #[clap(long, required_if_eq("image", "Custom"))]
     pub custom_img_url: Option<String>,
 }
 
@@ -46,11 +53,14 @@ pub enum ImageSource {
     Default,
 
     /// Displays the rank of the player
+    #[clap(name = "rank")]
     RankIcon,
 
+    #[clap(name = "champion")]
     /// Displays the icon of a champion
     ChampionIcon,
 
+    #[clap(name = "profile")]
     /// Displays the icon of the summoner
     SummonerIcon,
 
@@ -58,46 +68,20 @@ pub enum ImageSource {
     Custom,
 }
 
-/// Info display options
-#[derive(Parser, Debug, Clone)]
-pub struct InfoOptions {
-    /// Type of information to display
-    #[clap(long)]
-    pub info: InfoType,
+#[derive(clap::Subcommand, Debug, Clone)]
+// TODO: Add lolfetch
+pub enum InfoKind {
+    /// Ranked information
+    Ranked(ranked::Ranked),
 
-    /// Number of games to fetch for ranked statistics
-    #[clap(long, default_value = "10", value_parser = parse_number_of_parsed_games)]
-    pub games: i32,
+    /// Mastery information
+    Mastery(mastery::Mastery),
 
-    /// Number of top champions to display
-    #[clap(long, default_value = "5")]
-    pub top_champions: i32,
+    /// Recent matches information
+    RecentMatches(recent_matches::RecentMatches),
 
-    /// Number of mastery champions to fetch
-    #[clap(long, default_value = "10")]
-    pub mastery_champions: i32,
-
-    /// Number of recent matches to display
-    #[clap(long, default_value = "5")]
-    pub recent_matches: i32,
-    // TODO: Define custom info options
-}
-
-/// The type of information to display in the application
-#[derive(Debug, Clone, Copy, ValueEnum)]
-#[clap(rename_all = "PascalCase")]
-pub enum InfoType {
-    /// Displays the information about ranked games
-    Ranked,
-
-    /// Displays the information about champion mastery
-    Mastery,
-
-    /// Displays the information about recent matches
-    RecentMatches,
-
-    /// Displays custom information
-    Custom,
+    /// Custom information
+    Custom(custom::Custom),
 }
 
 /// Parses the champion name from the command line

@@ -1,6 +1,9 @@
 //! Rank module
 
-use crate::config::{Config, Image, Mode};
+use crate::{
+    cli::lolfetch::InfoKind,
+    config::{Config, Image},
+};
 use riven::{
     consts::{PlatformRoute, QueueType},
     models::{league_v4::LeagueEntry, summoner_v4::Summoner},
@@ -72,7 +75,7 @@ impl Fetcher for RiotApi {
         queue: QueueType,
         config: &Config,
     ) -> Result<Option<LeagueEntry>, FetcherError> {
-        if matches!(config.mode, Mode::Ranked(_)) || matches!(config.image, Image::RankIcon) {
+        if matches!(config.mode, InfoKind::Ranked(_)) || matches!(config.image, Image::RankIcon) {
             Ok(Some(
                 self.get_rank(summonner, config.account.server, queue)
                     .await?,

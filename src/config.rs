@@ -5,7 +5,7 @@ use crate::{
     api::account::RiotId,
     cli::{
         self,
-        lolfetch::{DisplayConfig, ImageSource, InfoOptions, InfoType},
+        lolfetch::{DisplayConfig, ImageSource, InfoKind},
     },
 };
 use anyhow::{Context, Result};
@@ -20,7 +20,7 @@ pub struct Config {
     pub image: Image,
 
     /// Display mode
-    pub mode: Mode,
+    pub mode: InfoKind,
 }
 
 impl Config {
@@ -32,12 +32,12 @@ impl Config {
             },
             image: Self::parse_image_config(value.display_config)
                 .context("Failed to parse image")?,
-            mode: Self::parse_mode_config(&value.info_config),
+            mode: value.info_config,
         })
     }
 
     fn parse_image_config(display: DisplayConfig) -> Result<Image> {
-        Ok(match display.display {
+        Ok(match display.image {
             ImageSource::Default => Image::Default,
             ImageSource::RankIcon => Image::RankIcon,
             ImageSource::ChampionIcon => {
@@ -50,24 +50,6 @@ impl Config {
                     .context("Custom image URL not provided")?,
             ),
         })
-    }
-
-    const fn parse_mode_config(info: &InfoOptions) -> Mode {
-        match info.info {
-            InfoType::Ranked => Mode::Ranked(Ranked {
-                games: info.games,
-                top_champions: info.top_champions,
-                recent_matches: info.recent_matches,
-            }),
-            InfoType::Mastery => Mode::Mastery(Mastery {
-                games: info.games,
-                mastery_champions: info.mastery_champions,
-            }),
-            InfoType::RecentMatches => Mode::RecentMatches(RecentMatches {
-                recent_matches: info.recent_matches,
-            }),
-            InfoType::Custom => Mode::Custom(Custom {}),
-        }
     }
 }
 
@@ -106,66 +88,4 @@ pub enum Image {
 
     /// Displays a custom image
     Custom(String),
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Mode {
-    /// Displays information aobut ranked games
-    Ranked(Ranked),
-
-    /// Displays information about champion mastery
-    Mastery(Mastery),
-
-    /// Displays information about recent matches
-    RecentMatches(RecentMatches),
-
-    /// Displays information in a `neofetch`-like format
-    #[allow(unused)] // TODO: Implement this mode
-    Lolfetch(Lolfetch),
-
-    /// Displays custom information
-    Custom(Custom),
-}
-
-/// Configuration of the lolfetch mode (similar to `neofetch` dispalay type)
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Lolfetch {
-    /// Number of games to fetch
-    pub games: i32,
-}
-
-/// Configuration for the display of ranked information
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Ranked {
-    /// Number of games to fetch
-    pub games: i32,
-
-    /// Top champions to display
-    pub top_champions: i32,
-
-    /// Number of recent matches to display
-    pub recent_matches: i32,
-}
-
-/// Configuration for the display of mastery information
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Mastery {
-    /// Number of games to fetch
-    pub games: i32,
-
-    /// Number of mastery champions to display
-    pub mastery_champions: i32,
-}
-
-/// Configuration for the display of recent matches
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RecentMatches {
-    /// Number of games to fetch and display
-    pub recent_matches: i32,
-}
-
-/// Configuration for the display of custom information
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Custom {
-    // TODO: Define the custom configuration
 }

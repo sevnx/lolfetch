@@ -1,11 +1,10 @@
+use crate::cli::{self, lolfetch::InfoKind};
 use riven::{
     consts::PlatformRoute,
     models::{champion_mastery_v4::ChampionMastery, summoner_v4::Summoner},
     RiotApi,
 };
 use thiserror::Error;
-
-use crate::config;
 
 #[derive(Error, Debug)]
 pub enum RetrieverError {
@@ -50,7 +49,7 @@ pub trait Fetcher {
         &self,
         summoner: &Summoner,
         route: PlatformRoute,
-        mode: &config::Mode,
+        mode: &cli::lolfetch::InfoKind,
     ) -> Result<Option<Vec<ChampionMastery>>, FetcherError>;
 }
 
@@ -59,10 +58,10 @@ impl Fetcher for RiotApi {
         &self,
         summoner: &Summoner,
         route: PlatformRoute,
-        mode: &config::Mode,
+        mode: &cli::lolfetch::InfoKind,
     ) -> Result<Option<Vec<ChampionMastery>>, FetcherError> {
         match mode {
-            config::Mode::Mastery(ref mastery) => {
+            InfoKind::Mastery(mastery) => {
                 let count = mastery.games;
                 self.get_mastery(summoner, route, count)
                     .await

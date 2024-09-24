@@ -2,7 +2,8 @@
 
 use crate::{
     api::Data as ApiData,
-    config::{Config, Mode},
+    cli::lolfetch::InfoKind,
+    config::Config,
     display::{DisplayableSectionKind, IMAGE_HEIGHT, IMAGE_WIDTH},
 };
 use champion_stats::RecentChampionInfo;
@@ -37,7 +38,7 @@ impl ApplicationData {
 
         let mut sections = Vec::new();
         match &config.mode {
-            Mode::Ranked(ranked) => {
+            InfoKind::Ranked(ranked) => {
                 // Name + Ranked champion stats + Recent Matches
                 let ranked_summoner = Summoner::new(&config.account.riot_id, data.ranked);
 
@@ -57,7 +58,7 @@ impl ApplicationData {
                 sections.push(DisplayableSectionKind::MatchHistory(match_history));
                 sections.push(DisplayableSectionKind::RecentChampionInfo(champions));
             }
-            Mode::Mastery(mastery) => {
+            InfoKind::Mastery(mastery) => {
                 // Name + Masteries
 
                 let summoner = Summoner::new(&config.account.riot_id, None);
@@ -69,7 +70,7 @@ impl ApplicationData {
                 sections.push(DisplayableSectionKind::Summoner(summoner));
                 sections.push(DisplayableSectionKind::Mastery(mastery));
             }
-            Mode::RecentMatches(recent) => {
+            InfoKind::RecentMatches(recent) => {
                 // Name + Recent Matches
                 let ranked_summoner = Summoner::new(&config.account.riot_id, data.ranked);
 

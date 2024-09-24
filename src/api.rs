@@ -2,7 +2,8 @@
 
 use crate::{
     cache,
-    config::{Config, Image, Mode},
+    cli::lolfetch::InfoKind,
+    config::{Config, Image},
     models::matches::MatchInfo,
 };
 use account::Fetcher as AccountFetcher;
@@ -103,14 +104,14 @@ impl Fetcher for RiotApi {
 
         let image_url = match config.image.clone() {
             Image::Default => match config.mode {
-                Mode::Ranked(_) | Mode::Lolfetch(_) => match ranked.as_ref() {
+                InfoKind::Ranked(_) => match ranked.as_ref() {
                     Some(ranked) => match ranked.tier {
                         Some(tier) => tier.get_icon_url().await,
                         None => anyhow::bail!("No tier found"),
                     },
                     None => anyhow::bail!("No ranked data found"),
                 },
-                Mode::Mastery(_) => {
+                InfoKind::Mastery(_) => {
                     masteries
                         .as_ref()
                         .expect("Masteries should be fetched")
@@ -120,7 +121,7 @@ impl Fetcher for RiotApi {
                         .get_icon_url()
                         .await
                 }
-                Mode::RecentMatches(_) => {
+                InfoKind::RecentMatches(_) => {
                     matches
                         .first()
                         .expect("There should be at least one match")
@@ -134,7 +135,7 @@ impl Fetcher for RiotApi {
                         .get_icon_url()
                         .await
                 }
-                Mode::Custom(_) => anyhow::bail!("Custom mode cannot use default image"),
+                InfoKind::Custom(_) => anyhow::bail!("Custom mode cannot use default image"),
             },
             Image::RankIcon => match ranked.as_ref() {
                 Some(ranked) => match ranked.tier {
