@@ -21,8 +21,8 @@ impl App {
         // Initialize logging
         if cli.verbose {
             match logging::setup() {
-                Ok(_) => info!("Logging initialized"),
-                Err(e) => eprintln!("Error initializing logging: {}", e),
+                Ok(()) => info!("Logging initialized"),
+                Err(e) => eprintln!("Error initializing logging: {e}"),
             }
         }
 
@@ -124,13 +124,13 @@ async fn handle_cache_load(api: &RiotApi, config: cli::cache::Load) -> Result<()
                 for info in matches {
                     let id = info.id.clone();
                     match cache.insert(id.clone(), info).await {
-                        Ok(_) => info!("Inserted match {id}"),
+                        Ok(()) => info!("Inserted match {id}"),
                         Err(e) => match e {
                             cache::CacheInsertError::AlreadyExists => {
-                                warn!("Match {id} already exists in cache")
+                                warn!("Match {id} already exists in cache");
                             }
                             cache::CacheInsertError::Remake => {
-                                warn!("Match {id} is a remake")
+                                warn!("Match {id} is a remake");
                             }
                             cache::CacheInsertError::PatchMismatch => {
                                 warn!("Match {id} is from a different patch");

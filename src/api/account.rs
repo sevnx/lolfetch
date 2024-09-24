@@ -104,7 +104,7 @@ impl Fetcher for riven::RiotApi {
         match self.summoner_v4().get_by_puuid(config.server, &puuid).await {
             Ok(summoner) => Ok(summoner),
             Err(e) => {
-                if let Some(riven::reqwest::StatusCode::NOT_FOUND) = e.status_code() {
+                if e.status_code() == Some(riven::reqwest::StatusCode::NOT_FOUND) {
                     Err(FetcherError::SummonerNotFound)
                 } else {
                     Err(FetcherError::FetchError(e))

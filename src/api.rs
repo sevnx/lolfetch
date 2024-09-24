@@ -90,7 +90,7 @@ impl Fetcher for RiotApi {
 
         for info in matches {
             match cache.insert(info.id.clone(), info).await {
-                Ok(_) => {}
+                Ok(()) => {}
                 Err(e) => {
                     warn!("Failed to insert match into cache: {e:?}");
                 }

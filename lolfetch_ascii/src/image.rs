@@ -97,6 +97,16 @@ mod tests {
             50,
             25,
         )
-        .unwrap();
+        .then(|result| {
+            assert!(result.is_ok());
+            match result {
+                Ok(art) => {
+                    assert_eq!(art.len(), 25);
+                    assert_eq!(art[0].len(), 50);
+                }
+                Err(_) => unreachable!(),
+            }
+            Ok(())
+        })
     }
 }

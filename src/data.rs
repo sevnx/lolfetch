@@ -41,7 +41,11 @@ impl ApplicationData {
                 // Name + Ranked champion stats + Recent Matches
                 let ranked_summoner = Summoner::new(&config.account.riot_id, data.ranked);
 
-                let matches = data.matches.unwrap();
+                let Some(matches) = data.matches else {
+                    return Err(ProcessingError::IncorrectData(
+                        "Matches should be fetched".to_string(),
+                    ));
+                };
 
                 let champions =
                     RecentChampionInfo::new(&matches, &data.summoner, ranked.top_champions);
@@ -69,7 +73,11 @@ impl ApplicationData {
                 // Name + Recent Matches
                 let ranked_summoner = Summoner::new(&config.account.riot_id, data.ranked);
 
-                let matches = data.matches.unwrap();
+                let Some(matches) = data.matches else {
+                    return Err(ProcessingError::IncorrectData(
+                        "Matches should be fetched".to_string(),
+                    ));
+                };
 
                 let match_history =
                     MatchHistory::new(&matches, &data.summoner, recent.recent_matches);

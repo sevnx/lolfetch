@@ -163,27 +163,24 @@ impl Cache {
 
     /// Clears the cache
     pub fn clear(summoner: Option<(Summoner, PlatformRoute)>) -> anyhow::Result<()> {
-        match summoner {
-            Some(summoner) => {
-                let dir = get_summoner_cache_dir(&summoner.0, summoner.1)?;
-                if dir.exists() {
-                    info!("Clearing cache for summoner");
-                    fs::remove_dir_all(dir).context("Failed to clear cache")
-                } else {
-                    warn!("Cache directory does not exist for summoner");
-                    Ok(())
-                }
+        if let Some(summoner) = summoner {
+            let dir = get_summoner_cache_dir(&summoner.0, summoner.1)?;
+            if dir.exists() {
+                info!("Clearing cache for summoner");
+                fs::remove_dir_all(dir).context("Failed to clear cache")
+            } else {
+                warn!("Cache directory does not exist for summoner");
+                Ok(())
             }
-            None => {
-                info!("Clearing cache for all summoners");
-                let dir = get_cache_dir()?;
-                if dir.exists() {
-                    info!("Clearing cache");
-                    fs::remove_dir_all(dir).context("Failed to clear cache")
-                } else {
-                    warn!("Cache directory does not exist");
-                    Ok(())
-                }
+        } else {
+            info!("Clearing cache for all summoners");
+            let dir = get_cache_dir()?;
+            if dir.exists() {
+                info!("Clearing cache");
+                fs::remove_dir_all(dir).context("Failed to clear cache")
+            } else {
+                warn!("Cache directory does not exist");
+                Ok(())
             }
         }
     }

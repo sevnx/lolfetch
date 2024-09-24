@@ -6,10 +6,7 @@ use crate::{
     },
 };
 use lolfetch_color::ColoredString;
-use riven::{
-    consts::Champion,
-    models::{match_v5, summoner_v4::Summoner},
-};
+use riven::{consts::Champion, models::summoner_v4::Summoner};
 use std::collections::HashMap;
 
 pub struct ChampionStats {

@@ -107,16 +107,18 @@ pub trait GoldDiffGetter {
 impl GoldDiffGetter for MatchInfo {
     fn get_gold_diff(&self, summoner: &Summoner, seconds: i32) -> Option<i32> {
         let participant = self.info.get_participant(summoner).ok()?;
-        info!("{:?}", participant.team_position);
         let position = TeamPosition::try_from(participant.team_position.clone()).ok()?;
 
         let enemy_laner = self.info.participants.iter().find(|p| {
             p.team_position == position.to_riot_api_string() && p.team_id != participant.team_id
         })?;
 
-        let frame = self.timeline.as_ref()?.get_frame(seconds)?;
-
-        let frame = frame.participant_frames.clone().unwrap();
+        let frame = self
+            .timeline
+            .as_ref()?
+            .get_frame(seconds)?
+            .participant_frames
+            .clone()?;
 
         let enemy = frame.get(&enemy_laner.participant_id)?;
         let me = frame.get(&participant.participant_id)?;
