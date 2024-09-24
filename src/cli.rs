@@ -69,6 +69,9 @@ pub enum LeagueServer {
 /// Parses the Riot API key from the command line
 fn parse_api_key(key: &str) -> Result<String> {
     if key.is_empty() {
+        if let Err(error) = dotenv::dotenv() {
+            warn!("Failed to load .env file: {error}");
+        }
         std::env::var("RIOT_API_KEY").context("API key not found")
     } else {
         Ok(key.to_string())

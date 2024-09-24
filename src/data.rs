@@ -89,9 +89,9 @@ impl ApplicationData {
             }
             _ => {}
         }
-
         info!("Finished processing data");
 
+        info!("Fetching immage");
         let image = lolfetch_ascii::from_url(&data.image_url, IMAGE_WIDTH, IMAGE_HEIGHT).await?;
 
         Ok(Self { image, sections })

@@ -53,6 +53,12 @@ impl DisplayableSection for MatchHistory {
         for match_info in &self.matches {
             let mut match_body = ColoredString::new();
 
+            match_body.push_unformatted_str(&format!(
+                "{:02}:{:02} - ",
+                match_info.time_played / 60,
+                match_info.time_played % 60
+            ));
+
             match match_info.game_result {
                 GameResult::Win => {
                     match_body.push_str("W", Some(Color::Blue), None);
