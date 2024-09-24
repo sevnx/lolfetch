@@ -3,6 +3,7 @@
 
 use crate::{
     api::account::RiotId,
+    cache::CacheSaveOptions,
     cli::{
         self,
         lolfetch::{DisplayConfig, ImageSource, InfoKind},
@@ -10,6 +11,13 @@ use crate::{
 };
 use anyhow::{Context, Result};
 use riven::consts::{Champion, PlatformRoute};
+
+/// Configuration of the application
+#[derive(Debug, Clone)]
+pub struct Globals {
+    /// Information whether to save the cache or not
+    pub cache_save: CacheSaveOptions,
+}
 
 #[derive(Debug, Clone)]
 pub struct Config {
@@ -21,6 +29,9 @@ pub struct Config {
 
     /// Display mode
     pub mode: InfoKind,
+
+    /// Information whether to save the cache or not
+    pub globals: Globals,
 }
 
 impl Config {
@@ -33,6 +44,9 @@ impl Config {
             image: Self::parse_image_config(value.display_config)
                 .context("Failed to parse image")?,
             mode: value.info_config,
+            globals: Globals {
+                cache_save: CacheSaveOptions::from_bool(!value.globals.no_save),
+            },
         })
     }
 

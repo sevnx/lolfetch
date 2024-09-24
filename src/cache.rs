@@ -127,31 +127,33 @@ impl Cache {
     }
 
     /// Saves the cache to storage, and returns its content.
-    pub fn save_to_file(mut self) -> anyhow::Result<Vec<MatchInfo>> {
-        let serialized =
-            serde_json::to_string(&self.match_info).context("Failed to serialize cache")?;
+    pub fn save(mut self, to_file: CacheSaveOptions) -> anyhow::Result<Vec<MatchInfo>> {
+        if matches!(to_file, CacheSaveOptions::Save) {
+            let serialized =
+                serde_json::to_string(&self.match_info).context("Failed to serialize cache")?;
 
-        // Clear the file
-        self.cache_file_lock
-            .set_len(0)
-            .context("Failed to clear cache file")?;
-        self.cache_file_lock
-            .seek(SeekFrom::Start(0))
-            .context("Failed to seek to start of cache file")?;
+            // Clear the file
+            self.cache_file_lock
+                .set_len(0)
+                .context("Failed to clear cache file")?;
+            self.cache_file_lock
+                .seek(SeekFrom::Start(0))
+                .context("Failed to seek to start of cache file")?;
 
-        // Write the new cache
-        self.cache_file_lock
-            .write_all(serialized.as_bytes())
-            .context("Failed to write cache file")?;
-        self.cache_file_lock
-            .flush()
-            .context("Failed to flush cache file")?;
-        self.cache_file_lock
-            .sync_all()
-            .context("Failed to sync cache file")?;
-        drop(self.cache_file_lock);
+            // Write the new cache
+            self.cache_file_lock
+                .write_all(serialized.as_bytes())
+                .context("Failed to write cache file")?;
+            self.cache_file_lock
+                .flush()
+                .context("Failed to flush cache file")?;
+            self.cache_file_lock
+                .sync_all()
+                .context("Failed to sync cache file")?;
+            drop(self.cache_file_lock);
 
-        info!("Saved cache to file");
+            info!("Saved cache to file");
+        }
 
         let mut match_vec: Vec<MatchInfo> = self.match_info.into_values().collect();
 
@@ -182,6 +184,26 @@ impl Cache {
                 warn!("Cache directory does not exist");
                 Ok(())
             }
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CacheSaveOptions {
+    Save,
+    NoSave,
+}
+
+impl CacheSaveOptions {
+    pub fn should_save(&self) -> bool {
+        matches!(self, Self::Save)
+    }
+
+    pub fn from_bool(should_save: bool) -> Self {
+        if should_save {
+            Self::Save
+        } else {
+            Self::NoSave
         }
     }
 }

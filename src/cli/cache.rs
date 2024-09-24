@@ -33,4 +33,8 @@ pub struct Load {
     /// Number of matches to load
     #[clap(long)]
     pub matches: Option<i32>,
+
+    /// Don't save the cache to disk
+    #[clap(long)]
+    pub no_save: bool,
 }

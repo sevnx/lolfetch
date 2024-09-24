@@ -15,6 +15,10 @@ pub mod recent_matches;
 /// CLI arguments for the default lolfetch mode (display)
 #[derive(Parser, Debug)]
 pub struct Lolfetch {
+    /// Info display options
+    #[command(subcommand)]
+    pub info_config: InfoKind,
+
     /// Summoner information
     #[command(flatten)]
     pub summoner: SummonerConfig,
@@ -23,9 +27,17 @@ pub struct Lolfetch {
     #[command(flatten)]
     pub display_config: DisplayConfig,
 
-    /// Info display options
-    #[command(subcommand)]
-    pub info_config: InfoKind,
+    /// Global flags
+    #[command(flatten)]
+    pub globals: Globals,
+}
+
+/// Global flag configuration
+#[derive(Parser, Debug, Clone)]
+pub struct Globals {
+    /// Don't save the cache to disk
+    #[clap(long)]
+    pub no_save: bool,
 }
 
 /// Configuration for the image that is displayed

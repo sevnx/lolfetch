@@ -85,10 +85,6 @@ impl Fetcher for RiotApi {
             }
         };
 
-        let masteries = self
-            .fetch_mastery(&summoner, config.account.server, &config.mode)
-            .await?;
-
         for info in matches {
             match cache.insert(info.id.clone(), info).await {
                 Ok(()) => {}
@@ -98,7 +94,11 @@ impl Fetcher for RiotApi {
             }
         }
 
-        let matches = cache.save_to_file()?;
+        let masteries = self
+            .fetch_mastery(&summoner, config.account.server, &config.mode)
+            .await?;
+
+        let matches = cache.save(config.globals.cache_save)?;
 
         info!("Data fetched successfully");
 

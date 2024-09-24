@@ -4,7 +4,7 @@ use crate::{
         matches::{Fetcher, MatchCriteria},
         Fetcher as ApiFetcher,
     },
-    cache,
+    cache::{self, CacheSaveOptions},
     cli::{self, cache::CacheAction, Cli, Commands},
     config::Config,
     data::ApplicationData,
@@ -149,7 +149,7 @@ async fn handle_cache_load(api: &RiotApi, config: cli::cache::Load) -> Result<()
     }
 
     // Save cache to file
-    cache.save_to_file()?;
+    cache.save(CacheSaveOptions::from_bool(!config.no_save))?;
 
     Ok(())
 }
