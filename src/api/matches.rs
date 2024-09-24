@@ -37,8 +37,6 @@ impl Retriever for RiotApi {
 
         let mut match_ids: HashSet<String> = HashSet::new();
 
-        info!("Fetching recent matches for {:?}", match_criteria);
-
         let mut remaining = match_criteria.count;
         while remaining > 0 {
             let current_count = remaining.min(MAX_MATCHES_PER_REQUEST);
