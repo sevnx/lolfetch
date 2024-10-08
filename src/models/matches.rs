@@ -83,15 +83,14 @@ impl MatchPlayerInfo {
         } else {
             GameResult::Loss
         };
+        let minions_killed = participant.total_minions_killed + participant.neutral_minions_killed;
 
         Ok(Self {
             champion: participant
                 .champion()
                 .map_err(|_| MatchPlayerInfoError::ChampionNotFound)?,
             kda: Kda(participant.kills, participant.deaths, participant.assists),
-            minions_killed: participant.total_minions_killed
-                + participant.total_ally_jungle_minions_killed.unwrap_or(0)
-                + participant.total_enemy_jungle_minions_killed.unwrap_or(0),
+            minions_killed,
             time_played: max_time,
             game_result,
             team_position: participant.team_position.clone().try_into()?,
