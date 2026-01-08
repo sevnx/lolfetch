@@ -7,7 +7,7 @@ use crate::{
     display::{DisplayableSectionKind, IMAGE_HEIGHT, IMAGE_WIDTH},
 };
 use champion_stats::RecentChampionInfo;
-use lolfetch_ascii::ColoredArt;
+use crate::ascii::ColoredArt;
 use mastery::Mastery;
 use match_history::MatchHistory;
 use summoner::Summoner;
@@ -21,7 +21,7 @@ pub mod summoner;
 #[derive(Error, Debug)]
 pub enum ProcessingError {
     #[error("Failed to fetch image")]
-    ImageFetchError(#[from] lolfetch_ascii::ArtProcessingError),
+    ImageFetchError(#[from] crate::ascii::ArtProcessingError),
 
     #[error("Failed to process data")]
     IncorrectData(String),
@@ -92,7 +92,7 @@ impl ApplicationData {
         info!("Finished processing data");
 
         info!("Fetching immage");
-        let image = lolfetch_ascii::from_url(&data.image_url, IMAGE_WIDTH, IMAGE_HEIGHT).await?;
+        let image = crate::ascii::from_url(&data.image_url, IMAGE_WIDTH, IMAGE_HEIGHT).await?;
 
         Ok(Self { image, sections })
     }

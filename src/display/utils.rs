@@ -1,6 +1,6 @@
 //! This module contains utilities regarding the display of the application.
 
-use lolfetch_color::ColoredString;
+use crate::color::ColoredString;
 use termcolor::Color;
 
 pub mod colors;

@@ -1,7 +1,7 @@
 use crate::display::DisplayableSection;
 use crate::models::champion_stats::GameStats;
 use crate::models::matches::{GameResult, MatchInfo, MatchPlayerInfo};
-use lolfetch_color::ColoredString;
+use crate::color::ColoredString;
 use riven::models::summoner_v4::Summoner;
 use termcolor::Color;
 

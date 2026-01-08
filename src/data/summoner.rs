@@ -8,7 +8,7 @@ use crate::{
     },
     models::ranked::RankedInfo,
 };
-use lolfetch_color::ColoredString;
+use crate::color::ColoredString;
 use riven::models::league_v4::LeagueEntry;
 
 /// Summoner information.

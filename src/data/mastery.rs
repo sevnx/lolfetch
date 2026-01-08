@@ -1,4 +1,4 @@
-use lolfetch_color::ColoredString;
+use crate::color::ColoredString;
 use riven::models::champion_mastery_v4::ChampionMastery;
 
 use crate::display::DisplayableSection;

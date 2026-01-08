@@ -1,7 +1,0 @@
-[package]
-name = "lolfetch_color"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-termcolor = "1.4"

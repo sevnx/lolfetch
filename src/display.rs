@@ -4,7 +4,7 @@ use crate::data::{
 };
 use anyhow::Result;
 use enum_dispatch::enum_dispatch;
-use lolfetch_color::ColoredString;
+use crate::color::ColoredString;
 use std::io::Write;
 use termcolor::{Buffer, BufferWriter, ColorChoice};
 

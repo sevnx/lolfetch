@@ -1,3 +1,4 @@
+use crate::color::ColoredString;
 use crate::{
     display::DisplayableSection,
     models::{
@@ -5,7 +6,6 @@ use crate::{
         matches::{MatchInfo, MatchPlayerInfo},
     },
 };
-use lolfetch_color::ColoredString;
 use riven::{consts::Champion, models::summoner_v4::Summoner};
 use std::collections::HashMap;
 

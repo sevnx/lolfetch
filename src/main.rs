@@ -7,8 +7,10 @@ use clap::Parser;
 // Crate modules
 mod api;
 mod app;
+mod ascii;
 mod cache;
 mod cli;
+mod color;
 mod config;
 mod data;
 mod display;
