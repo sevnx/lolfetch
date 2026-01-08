@@ -132,7 +132,7 @@ async fn handle_cache_load(api: &RiotApi, config: cli::cache::Load) -> Result<()
                             cache::CacheInsertError::Remake => {
                                 warn!("Match {id} is a remake");
                             }
-                            cache::CacheInsertError::PatchMismatch => {
+                            cache::CacheInsertError::SplitMismatch => {
                                 warn!("Match {id} is from a different patch");
                                 // This means that we are not in the same season, we can stop here
                                 break 'game;

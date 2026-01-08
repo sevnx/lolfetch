@@ -82,7 +82,7 @@ impl DisplayableSection for RecentChampionInfo {
                 .map_or_else(|| "PERFECT".to_string(), |kda| format!("{kda:.1} KDA"));
 
             champion_body.push_unformatted_str(&format!(
-                "{:<width$} - {:3.0}% WR - {} - {:.1} CS/M - {} Played",
+                "{:<width$} - {:3.0}% WR - {} - {:.1} CS/M - ({} played)",
                 champion_stats
                     .champion
                     .name()

@@ -4,9 +4,9 @@ use std::collections::HashSet;
 
 use crate::{cache, cli::lolfetch::InfoKind, models::matches::MatchInfo};
 use riven::{
+    RiotApi,
     consts::{Queue, RegionalRoute},
     models::summoner_v4::Summoner,
-    RiotApi,
 };
 use thiserror::Error;
 
@@ -68,17 +68,17 @@ pub struct MatchCriteria {
 impl InfoKind {
     pub const fn to_match_criteria(&self) -> Option<MatchCriteria> {
         match self {
-            Self::Ranked(ref ranked) => Some(MatchCriteria {
+            Self::Ranked(ranked) => Some(MatchCriteria {
                 count: ranked.games,
                 queue: Some(Queue::SUMMONERS_RIFT_5V5_RANKED_SOLO),
                 start_at: None,
             }),
-            Self::Mastery(ref mastery) => Some(MatchCriteria {
+            Self::Mastery(mastery) => Some(MatchCriteria {
                 count: mastery.games,
                 queue: None,
                 start_at: None,
             }),
-            Self::RecentMatches(ref recent_matches) => Some(MatchCriteria {
+            Self::RecentMatches(recent_matches) => Some(MatchCriteria {
                 count: recent_matches.recent_matches,
                 queue: Some(Queue::SUMMONERS_RIFT_5V5_RANKED_SOLO),
                 start_at: None,

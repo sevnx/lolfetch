@@ -44,7 +44,7 @@ pub struct Cache {
 pub enum CacheInsertError {
     AlreadyExists,
     Remake,
-    PatchMismatch,
+    SplitMismatch,
 }
 
 impl Cache {
@@ -107,7 +107,7 @@ impl Cache {
         }
 
         if !info.is_current_split().await {
-            return Err(CacheInsertError::PatchMismatch);
+            return Err(CacheInsertError::SplitMismatch);
         }
 
         self.match_info.insert(match_id, info);

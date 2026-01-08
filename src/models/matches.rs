@@ -27,10 +27,11 @@ impl MatchInfo {
         self.info.game_duration < MINUTES_UNTIL_REMAKE * 60
     }
 
+    // A split is currently just one year, so we can check if the patch is the same as the latest patch
     pub async fn is_current_split(&self) -> bool {
         get_split_from_patch(&self.info.game_version).expect("Failed to get split from patch")
             == get_split_from_patch(get_latest_patch().await)
-                .expect("Failed to get split from patch")
+                .expect("Failed to get split from latest patch")
     }
 }
 
