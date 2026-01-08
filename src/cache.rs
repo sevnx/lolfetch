@@ -82,7 +82,7 @@ impl Cache {
         let cache = match serde_json::from_str::<HashMap<MatchId, MatchInfo>>(&cache_str) {
             Ok(cache) => cache,
             Err(err) => {
-                warn!("Failed to deserialize cache: {:?}", err);
+                warn!("Failed to deserialize cache: {err:?}");
                 HashMap::new()
             }
         };
@@ -116,10 +116,6 @@ impl Cache {
 
     pub fn contains(&self, match_id: &MatchId) -> bool {
         self.match_info.contains_key(match_id)
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.match_info.is_empty()
     }
 
     pub fn len(&self) -> usize {
@@ -195,10 +191,6 @@ pub enum CacheSaveOptions {
 }
 
 impl CacheSaveOptions {
-    pub fn should_save(&self) -> bool {
-        matches!(self, Self::Save)
-    }
-
     pub fn from_bool(should_save: bool) -> Self {
         if should_save {
             Self::Save

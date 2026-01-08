@@ -31,7 +31,7 @@ impl Retriever for RiotApi {
         count: i32,
     ) -> Result<Vec<ChampionMastery>, RetrieverError> {
         self.champion_mastery_v4()
-            .get_top_champion_masteries_by_puuid(route, &summoner.id, Some(count))
+            .get_top_champion_masteries_by_puuid(route, &summoner.puuid, Some(count))
             .await
             .map_err(RetrieverError::FetchError)
     }

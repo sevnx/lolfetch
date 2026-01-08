@@ -39,7 +39,7 @@ impl Retriever for RiotApi {
     ) -> Result<LeagueEntry, RetrieverError> {
         let entries = self
             .league_v4()
-            .get_league_entries_for_summoner(route, &summonner.id)
+            .get_league_entries_by_puuid(route, &summonner.puuid)
             .await?;
 
         for entry in entries {

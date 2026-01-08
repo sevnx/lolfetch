@@ -16,10 +16,8 @@ impl From<LeagueServer> for PlatformRoute {
             LeagueServer::Ru => Self::RU,
             LeagueServer::Tr => Self::TR1,
             LeagueServer::Sg => Self::SG2,
-            LeagueServer::Ph => Self::PH2,
             LeagueServer::Vn => Self::VN2,
             LeagueServer::Tw => Self::TW2,
-            LeagueServer::Th => Self::TH2,
             LeagueServer::Mena => Self::ME1,
             LeagueServer::Pbe => Self::PBE1,
         }

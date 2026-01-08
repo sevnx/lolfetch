@@ -102,14 +102,9 @@ impl Fetcher for riven::RiotApi {
         let puuid = self.get_puuid(&config.riot_id).await?;
 
         match self.summoner_v4().get_by_puuid(config.server, &puuid).await {
-            Ok(summoner) => Ok(summoner),
-            Err(e) => {
-                if e.status_code() == Some(riven::reqwest::StatusCode::NOT_FOUND) {
-                    Err(FetcherError::SummonerNotFound)
-                } else {
-                    Err(FetcherError::FetchError(e))
-                }
-            }
+            Ok(Some(summoner)) => Ok(summoner),
+            Ok(None) => Err(FetcherError::SummonerNotFound),
+            Err(e) => Err(FetcherError::FetchError(e)),
         }
     }
 }

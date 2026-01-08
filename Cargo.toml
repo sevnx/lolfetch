@@ -4,25 +4,25 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-riven = "2.56.0"
-reqwest = { version = "0.12.7", features = ["json", "blocking"] }
-tokio = { version = "1.39.2", features = ["full"] }
-clap = { version = "4.5.15", features = ["derive"] }
-dotenv = "0.15.0"
-anyhow = "1.0.86"
-log = "0.4.22"
-thiserror = "1.0.63"
-tokio-macros = "2.2.0"
-tracing = "0.1.40"
-tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
+riven = "2.75.0"
+reqwest = { version = "0.13.1", features = ["json", "blocking"] }
+tokio = { version = "1.49.0", features = ["full"] }
+clap = { version = "4.5.54", features = ["derive"] }
+dotenvy = "0.15.7"
+anyhow = "1.0.100"
+log = "0.4.29"
+thiserror = "2.0.17"
+tokio-macros = "2.6.0"
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
 lolfetch-ascii = { path = "./lolfetch_ascii" }
 lolfetch_color = { path = "./lolfetch_color" }
-url = "2.5.2"
+url = "2.5.8"
 termcolor = "1.4.1"
 enum_dispatch = "0.3.13"
-dirs = "5.0"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+dirs = "6.0.0"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
 
 [dev-dependencies]
-test-case = "3.1"
+test-case = "3.3.1"
