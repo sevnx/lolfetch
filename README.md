@@ -16,23 +16,23 @@ You will then have to either set the `RIOT_API_KEY` environment variable or pass
 > **Note**: The basic API key is limited to 100 requests every 2 minutes. Thanks to the `Riven` crate, the program will automatically handle the rate limiting,
 > but it might take some time to fetch an entire season's worth of ranked information.
 
-### Releases
+### Cargo installation
 
-// TODO: Release binaries
+The program can be installed using [cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html).
 
-The easiest way to use `lolfetch` is to download the binary from releases.
+```sh
+cargo install lolfetch
+```
 
 ### Building from source
 
-// TODO: Maybe publish to crates.io
+The program can also be built from source. This requires the Rust toolchain to be installed (which can be acquired through [rustup](https://rustup.rs/)).
 
-The program can also be built from source. This requires the Rust toolchain to be installed (which can be done through [rustup](https://rustup.rs/)).
-    
-    ```sh
-    git clone <URL>
-    cd lolfetch
-    cargo install --path .
-    ```
+```sh
+git clone https://github.com/sevnx/lolfetch.git
+cd lolfetch
+cargo install --path .
+```
 
 ## Example
 
@@ -44,7 +44,7 @@ lolfetch display --riot-id <RIOT_ID> --region <REGION> ranked --api-key <API_KEY
 
 This will output something like this (with pretty colors):
 
-```
+```plaintext
 ➜ lolfetch display --riot-id "hide on bush#KR1" --server KR ranked --api-key <KEY>
                                                   
                                                   
@@ -68,7 +68,7 @@ This will output something like this (with pretty colors):
                      --;;-;;-;                         Ziggs        - 100% WR - 5.5 KDA - 8.1 CS/M - 1 Played
                        -  ;-                           Nasus        -   0% WR - 0.6 KDA - 7.2 CS/M - 1 Played
                                                   
-                                                  
+                                         
 ```
 
 ## Usage
