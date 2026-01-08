@@ -10,12 +10,6 @@ use riven::{
 };
 use thiserror::Error;
 
-#[derive(Error, Debug)]
-pub enum IdRetrieverError {
-    #[error("Failed to fetch matches: {0}")]
-    Fetch(#[from] riven::RiotApiError),
-}
-
 trait Retriever {
     /// Returns x recent match IDs of a summonner
     async fn get_recent_matches_ids(

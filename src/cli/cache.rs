@@ -1,7 +1,7 @@
 //! Cache CLI module.
 
 use super::SummonerConfig;
-use clap::{command, Parser, Subcommand};
+use clap::{Parser, Subcommand};
 
 #[derive(Parser, Debug)]
 pub struct Cache {

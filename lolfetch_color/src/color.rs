@@ -75,7 +75,7 @@ impl ColoredString {
         self.vec.extend(other.vec.iter().cloned());
     }
 
-    pub fn iter(&self) -> std::slice::Iter<ColoredChar> {
+    pub fn iter(&self) -> std::slice::Iter<'_, ColoredChar> {
         self.vec.iter()
     }
 
