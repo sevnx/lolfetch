@@ -1,10 +1,15 @@
 //! Ranked display options
 
 use super::parse_number_of_parsed_games;
+use crate::cli::SummonerConfig;
 use clap::Parser;
 
 #[derive(Parser, Debug, Clone)]
 pub struct Ranked {
+    /// Summoner information
+    #[command(flatten)]
+    pub summoner: SummonerConfig,
+
     /// Number of games to fetch for ranked statistics
     #[clap(long, default_value = "10", value_parser = parse_number_of_parsed_games)]
     pub games: i32,

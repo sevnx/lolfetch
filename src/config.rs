@@ -36,10 +36,18 @@ pub struct Config {
 
 impl Config {
     pub fn from_cli(value: cli::lolfetch::Lolfetch) -> Result<Self> {
+        // Extract summoner config from the info_config variant
+        let summoner_config = match &value.info_config {
+            InfoKind::Ranked(ranked) => &ranked.summoner,
+            InfoKind::Mastery(mastery) => &mastery.summoner,
+            InfoKind::RecentMatches(recent_matches) => &recent_matches.summoner,
+            InfoKind::Custom(custom) => &custom.summoner,
+        };
+
         Ok(Self {
             account: Account {
-                riot_id: value.summoner.riot_id,
-                server: value.summoner.server.into(),
+                riot_id: summoner_config.riot_id.clone(),
+                server: summoner_config.server.into(),
             },
             image: Self::parse_image_config(value.display_config)
                 .context("Failed to parse image")?,

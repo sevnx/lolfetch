@@ -35,15 +35,15 @@ pub enum Commands {
 #[derive(Parser, Debug, Clone)]
 pub struct SummonerConfig {
     /// Your Riot ID (e.g. abc#1234)
-    #[clap(long, value_parser = RiotId::from_str)]
+    #[clap(value_parser = RiotId::from_str)]
     pub riot_id: RiotId,
 
     /// Server the account is registered on
-    #[clap(long)]
+    #[clap()]
     pub server: LeagueServer,
 }
 
-#[derive(ValueEnum, Debug, Clone)]
+#[derive(ValueEnum, Debug, Clone, Copy)]
 #[clap(rename_all = "screaming_snake_case")]
 pub enum LeagueServer {
     Na,

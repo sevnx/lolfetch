@@ -1,6 +1,5 @@
 //! lolfetch CLI module
 
-use super::SummonerConfig;
 use anyhow::{Context, Error, Result};
 use clap::{Parser, ValueEnum};
 use riven::consts::Champion;
@@ -18,10 +17,6 @@ pub struct Lolfetch {
     /// Info display options
     #[command(subcommand)]
     pub info_config: InfoKind,
-
-    /// Summoner information
-    #[command(flatten)]
-    pub summoner: SummonerConfig,
 
     /// Display options
     #[command(flatten)]
