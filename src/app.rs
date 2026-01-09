@@ -1,18 +1,18 @@
 use crate::{
     api::{
+        Fetcher as ApiFetcher,
         account::{self, Fetcher as AccountFetcher, PuuidFetchError},
         matches::{Fetcher, MatchCriteria},
-        Fetcher as ApiFetcher,
     },
     cache::{self, CacheSaveOptions},
-    cli::{self, cache::CacheAction, Cli, Commands},
+    cli::{self, Cli, Commands, cache::CacheAction},
     config::Config,
     data::ApplicationData,
     display::Layout,
     logging,
 };
-use anyhow::Result;
-use riven::{consts::Queue, RiotApi, RiotApiConfig};
+use anyhow::{Context, Result};
+use riven::{RiotApi, RiotApiConfig, consts::Queue};
 
 pub struct App {}
 
@@ -26,9 +26,13 @@ impl App {
             }
         }
 
+        dotenvy::dotenv().ok();
+
         info!("Starting lolfetch");
 
-        let api = RiotApi::new(RiotApiConfig::with_key(&cli.api_key));
+        let api = RiotApi::new(RiotApiConfig::with_key(
+            &std::env::var("RIOT_API_KEY").context("RIOT_API_KEY not found")?,
+        ));
         match cli.command {
             Commands::Display(config) => handle_display(&api, config).await,
             Commands::Cache(cache) => handle_cache(&api, cache).await,

@@ -1,7 +1,6 @@
 //! This module handles the command line arguments for the application.
 
 use crate::api::account::RiotId;
-use anyhow::{Context, Result};
 use clap::{Parser, Subcommand, ValueEnum};
 
 pub mod cache;
@@ -17,10 +16,6 @@ pub struct Cli {
     /// Verbose mode
     #[clap(long, global = true)]
     pub verbose: bool,
-
-    /// API key for the Riot API
-    #[clap(long, default_value = "", value_parser = parse_api_key, global = true)]
-    pub api_key: String,
 }
 
 #[derive(Subcommand, Debug)]
@@ -62,16 +57,4 @@ pub enum LeagueServer {
     Tw,
     Mena,
     Pbe,
-}
-
-/// Parses the Riot API key from the command line
-fn parse_api_key(key: &str) -> Result<String> {
-    if key.is_empty() {
-        if let Err(error) = dotenvy::dotenv() {
-            warn!("Failed to load .env file: {error}");
-        }
-        std::env::var("RIOT_API_KEY").context("API key not found")
-    } else {
-        Ok(key.to_string())
-    }
 }
