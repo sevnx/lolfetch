@@ -23,7 +23,7 @@ pub enum Commands {
     /// Cache management
     Cache(cache::Cache),
 
-    /// Default lolfetch mode
+    /// Display information about a League of Legends account
     Display(lolfetch::Lolfetch),
 }
 

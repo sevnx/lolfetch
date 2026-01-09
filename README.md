@@ -39,13 +39,13 @@ cargo install --path .
 The following command will display the ranked information of the player with the given `RIOT_ID` in the given `REGION`.
 
 ```sh
-lolfetch display --riot-id <RIOT_ID> --region <REGION> ranked --api-key <API_KEY>
+RIOT_API_KEY=<API_KEY> lolfetch display ranked <RIOT_ID> <REGION>
 ```
 
 This will output something like this (with pretty colors):
 
 ```plaintext
-➜ lolfetch display --riot-id "hide on bush#KR1" --server KR ranked --api-key <KEY>
+➜ RIOT_API_KEY=<API_KEY> lolfetch display ranked "hide on bush#KR1" KR
                                                   
                                                   
                                                   
@@ -77,7 +77,9 @@ The output of the program can be customized using different CLI options.
 
 Output of `lolfetch help`:
 
-```sh
+```plaintext
+A command-line League of Legends information tool
+
 Usage: lolfetch [OPTIONS] <COMMAND>
 
 Commands:
@@ -86,16 +88,17 @@ Commands:
   help     Print this message or the help of the given subcommand(s)
 
 Options:
-      --verbose            Verbose mode
-      --api-key <API_KEY>  API key for the Riot API [default: ]
-  -h, --help               Print help
-  -V, --version            Print version
+      --verbose  Verbose mode
+  -h, --help     Print help
+  -V, --version  Print version
 ```
 
 Output of `lolfetch display help`:
 
-```sh
-Usage: lolfetch display [OPTIONS] --riot-id <RIOT_ID> --server <SERVER> <COMMAND>
+```plaintext
+Display information about a League of Legends account
+
+Usage: lolfetch display [OPTIONS] <COMMAND>
 
 Commands:
   ranked          Ranked information
@@ -105,18 +108,11 @@ Commands:
   help            Print this message or the help of the given subcommand(s)
 
 Options:
-      --riot-id <RIOT_ID>
-          Your Riot ID (e.g. abc#1234)
-
-      --server <SERVER>
-          Server the account is registered on
-          
-          [possible values: NA, EUW, EUNE, OCE, KR, JP, BR, LAS, LAN, RU, TR, SG, PH, VN, TW, TH, MENA, PBE]
+      --verbose
+          Verbose mode
 
       --image <IMAGE>
           Image source for the ASCII art
-          
-          [default: Default]
 
           Possible values:
           - Default:  Default image display, based on the display type
@@ -124,20 +120,20 @@ Options:
           - champion: Displays the icon of a champion
           - profile:  Displays the icon of the summoner
           - Custom:   Displays a custom image
-
-      --verbose
-          Verbose mode
-
-      --api-key <API_KEY>
-          API key for the Riot API
           
-          [default: ]
+          [default: Default]
 
-      --champion <CHAMPION> # This is only if you want to display a specific champion icon
+      --champion <CHAMPION> (this is only for the champion icon display)
           Name of the champion icon to display
 
-      --custom-img-url <CUSTOM_IMG_URL> # This is only for the custom mode
+      --custom-img-url <CUSTOM_IMG_URL> (this is only for the custom image display)
           Link to the custom image to display
+
+      --no-save
+          Don't save the cache to disk
+
+  -h, --help
+          Print help (see a summary with '-h')
 ```
 
 ## Disclaimer
